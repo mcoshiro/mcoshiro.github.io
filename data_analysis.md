@@ -1,3 +1,5 @@
+$$\def\sb{\_}$$
+
 # Data analysis for particle physics
 
 This page is a tutorial on data analysis for particle ("high-energy") physics. It is a work-in-progress and thus may experience unexpected reorganization. 
