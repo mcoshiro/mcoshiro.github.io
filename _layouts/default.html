@@ -7,20 +7,20 @@
     <link rel="stylesheet" href="https://unpkg.com/@primer/css@13.2.0/dist/primer.css" />  <!--Use full Primer.style static CDN-->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/anchor-js/4.1.0/anchor.min.js" integrity="sha256-lZaRhKri35AyJSypXXs4o6OPFTbTmUoltBbDCbdzegg=" crossorigin="anonymous"></script>
     <script >
-      window.MathJax = {
+      MathJax = {
+        tex: {
+          inlineMath: {'[+]': [['$', '$']]}
+        },
         output: {
           displayOverflow: 'linebreak',  
           linebreaks: {                  
-            inline: false,              
+            inline: true,              
             width: '100%',             
             lineleading: .2,          
             LinebreakVisitor: null,   
           }
         }
-        tex: {
-          inlineMath: [['$', '$']]
-        }
-      }
+      };
     </script>
     <script defer src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js"></script>
     <script>anchors.add();</script>
