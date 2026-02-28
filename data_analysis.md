@@ -76,7 +76,7 @@ A common simple use of programming in high-energy physics is serve as a calculat
 
 # Exercise 1
 
-In particle physics, we often use "natural units" where the speed of light c and the reduced Planck constant &#295; are equal to 1. To have c=1 when c is usually `3.00e+8` meters per second, we measure distance and time in the "same" units. So, we can define a new unit of *time* called meters such that 1 second is equal to about `3.00e+8` meters of time since then c is equal to `3.00e+8/3.00e+8=1`. Similarly, to set &#295;=1 when it is usually `1.054e-34` joule seconds, we measure time and energy (and distance and momentum) in inverse units. So, one inverse joule of *time* is equal to about `9.49e+33` seconds since then &#295; is `1.054e-34*9.49e+33=1`. To check your understanding, consider how far is 1 second of distance? How much is 1 inverse second of energy? 1 inverse joule of distance?
+In particle physics, we often use "natural units" where the speed of light c and the reduced Planck constant &#295; are equal to 1. To have c=1 when c is usually `3.00e+8` meters per second, we measure distance and time in the "same" units. For example, we can define a new unit of *time* called meters such that 1 second is equal to about `3.00e+8` meters of time and thus 1 meter of time is about `3.33e-9` seconds. Then, c is equal to `3.00e+8/3.00e+8`=1. Similarly, to set &#295;=1 when it is usually `1.054e-34` joule seconds, we measure time and energy (and distance and momentum) in inverse units. So, we define an inverse joule of *time* to be about `1.054e-34` seconds, which means 1 second is about `9.49e+33` inverse joules. Then &#295; is `1.054e-34*9.49e+33`=1. To check your understanding, consider how far is 1 second of distance? How much is 1 inverse second of energy? 1 inverse joule of distance?
 
 Given that the reduced planck constant &#295; is approximatley equal to `6.582e-16` eV s, use python to calculate the mean lifetime of the following particles in seconds given their measured decay rate ("width") in units of energy from the [particle data book](https://pdg.lbl.gov/). Note the mean lifetime is simply the inverse of the decay rate `mean_lifetime=1.0/decay_rate`.
 
@@ -90,3 +90,87 @@ Given that the reduced planck constant &#295; is approximatley equal to `6.582e-
 With these mean lifetimes, how far (in meters) would each of these particles travel on average if they were traveling at the speed of light, `3.00e+8` m/s.
 
 ## Functions and control in python
+
+You can define a function in python using a format similar to the following:
+
+```py
+def hypotenuse(a, b):
+  c = math.sqrt(a**2+b**2)
+  return c
+```
+
+The keyword `def` comes first, followed by the function name (in this example `add`), the arguments (inputs) to the functions in parentheses, then a semicolon. The body of the function defining what it does it then specified by a series of indented lines. The output of the function can be specified by a line with the `return` keyword. One can then call this function
+
+```py
+hypotenuse(3.0, 4.0)
+```
+
+To have code that executes in certain cases, one can use `if` statements. For example:
+
+```py
+def absolute_value(x):
+  if x > 0:
+    return x
+  elif x == 0:
+    return 0
+  else:
+    return -1.0*x
+```
+
+If the first `if` condition (`x > 0`) is met, the subsequent indented code will be run. If it is not met, the code will check the next `elif` condition (`x == 0`) and run the subsequent code if that condition is met. This can continue for any number of `elif`s. Finally, if no conditions are met, the `else` block will run. Note that `elif` and `else` are not required--- you can just do nothing if the original condition(s) are not met.
+
+To have code that executes repeatedly, one can use loops. For example:
+
+```py
+def factorial(x):
+  x_factorial = 0
+  while x > 0:
+    x_factorial *= x
+    x -= 1
+  return x_factorial
+```
+
+In this case, the indented code block after the `while` will continue to run until the condition (`x > 0`) is no longer true. Another form of loop is the `for` loop:
+
+```py
+def count_electrons():
+  # electrons have particle ID 11 or -11 (antielectrons)
+  nelectrons = 0
+  for id in id_list:
+    if id==11:
+      nelectrons += 1
+  return nelectrons
+
+id_list = [3, 21, -4, 11, -15, 23, 12, -2, 2, 11, 25, 21]
+count_electrons(id_list)
+```
+
+The `for` loop allows one to iterate over the elements of a collection such as a list.
+
+# Exercise 2
+
+Write a function that implements the "Hailstone" sequence. Given any integer `n`, one constructs a sequence where 
+ * if `n` is even, divide it by 2
+ * if `n` is odd, multiply it by 3 and add 1
+ * continue this sequence until n is 1
+
+You can print out a value using the `print` function ex. `print(n)`. If you have a hailstone function
+
+```py
+def hailstone(n):
+   #your code here
+```
+
+You should be able to run for example `hailstone(10)` to get
+
+```
+10
+5
+16
+8
+4
+2
+1
+```
+
+**TODO** Replace this with something more relevant for particle physics
