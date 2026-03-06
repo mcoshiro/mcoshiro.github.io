@@ -172,24 +172,19 @@ The `for` loop allows one to iterate over the elements of a collection such as a
 
 For this exercise, we will work in natural units where $c=1$. In special relativity, space and time msut be treated together as spacetime as the space and time axes differ for different observers. This means points in spacetime are specified by a 4D vector $(t, x, y, z)$. The energy and spatial momentum also appear as a 4D vector called the four-momentum $(E, p\_{x}, p\_{y}, p\_{z})$.
 
-In collider experiments, 4-momenta components are often given in another format that is related to spherical coordinates: the transverse momentum $p\_{\mathrm{T}}$, the [pseudorapidity](https://en.wikipedia.org/wiki/Pseudorapidity) $\eta$, the azimuthal angle $\phi$, and the invariant mass $m$. These are related to the rectilinear coordinates via the transformations:
+In collider experiments, 4-momenta components are often given in another format that is related to spherical coordinates: the transverse momentum $p\_\mathrm{T}$, the [pseudorapidity](https://en.wikipedia.org/wiki/Pseudorapidity) $\eta$, the azimuthal angle $\phi$, and the invariant mass $m$. These are related to the rectilinear coordinates via the transformations:
 
-$$
-E = \sqrt{p\_{T}\mathrm{cosh}\eta)^2+m^2}
-p\_{x} = p\_{T}\cos\phi
-p\_{y} = p\_{T}\sin\phi
-p\_{z} = p\_{T}\mathrm{sinh}\eta
-$$
+$$E = \sqrt{(p\_\mathrm{T}\mathrm{cosh}\eta)^2+m^2}$$
+$$p\_{x} = p\_\mathrm{T}\cos\phi$$
+$$p\_{y} = p\_\mathrm{T}\sin\phi$$
+$$p\_{z} = p\_\mathrm{T}\mathrm{sinh}\eta$$
 
 and in reverse:
 
-$$
-p\_{\mathrm{T}}=\sqrt{p\_{\mathrm{x}}^2+p\_{\mathrm{y}^2} \\
-\eta = -\log\left[\tan\left(\frac{\theta}{2}\right)\right] \\
-     = \mathrm{arctanh}\left(\frac{p\_{z}}{p\_x^2+p\_y^2+p\_z^2}\right) \\
-\phi = \mathrm{atan2}(y, x)\\
-m = \sqrt{E^2-p\_x^2-p\_y^2-p\_z^2}
-$$
+$$p\_\mathrm{T}=\sqrt{p\_x^2+p\_y^2}$$
+$$\eta = -\log\left[\tan\left(\frac{\theta}{2}\right)\right] = \mathrm{arctanh}\left(\frac{p\_z}{p\_x^2+p\_y^2+p\_z^2}\right)$$
+$$\phi = \mathrm{atan2}(y, x)$$
+$$m = \sqrt{E^2-p\_x^2-p\_y^2-p\_z^2}$$
 
 where atan2 is the [2-argument arctangent](https://en.wikipedia.org/wiki/Atan2). Write functions to convert between coordinates given as Python lists `[e, px, py, pz]` and `[pt, eta, phi, m]` in both directions. You can find the relevant functions (sin, cos, arctanh, etc.) in the Python [math](https://docs.python.org/3/library/math.html) library. 
 
@@ -222,9 +217,9 @@ def vector_norm(x):
   return (x[0]**2+x[1]**2)**0.5
 ```
 
-We know that $\vec{v}=\frac{d\vec{x}}{dt}$ and $\vec{a}=\frac{d\vec{v}}{dt}$. So, if we pick a time $\Delta t$ that is short enough that $\vec{v}$ is roughly constant, then the new position after $\Delta t$ time is $\vec{x}\sb{\mathrm{new}} = \vec{x}+\frac{d\vec{x}}{dt}\Delta t=\vec{x}+\vec{v}\Delta t$ and similarly $\vec{v}\sb{\mathrm{new}}=\vec{v}+\vec{a}\Delta t$. We can then just repeat this over and over to get the position and velocity at some later time.
+We know that $\vec{v}=\frac{d\vec{x}}{dt}$ and $\vec{a}=\frac{d\vec{v}}{dt}$. So, if we pick a time $\Delta t$ that is short enough that $\vec{v}$ is roughly constant, then the new position after $\Delta t$ time is $\vec{x}\_{\mathrm{new}} = \vec{x}+\frac{d\vec{x}}{dt}\Delta t=\vec{x}+\vec{v}\Delta t$ and similarly $\vec{v}\_{\mathrm{new}}=\vec{v}+\vec{a}\Delta t$. We can then just repeat this over and over to get the position and velocity at some later time.
 
-The last ingrediant is calculating the accereration which depends on the force and mass $\vec{a}=\vec{F}/m$. Newtonian gravity says that the force on body 1 is $\vec{F}=\frac{Gm\sb{1}m\sb{2}}{\vert\vec{r}\vert^3}\vec{r}$ where $\vec{r}$ is the the displacement between the bodies $\vec{r}=\vec{x}\sb{2}-\vec{x}\sb{1}$, and an analogous expression holds for body 2. We have to decide on masses $m\sb{1}$ and $m\sb{2}$ as well as a system of units, which will determine the constant $G$. In code, our full simulation is then
+The last ingrediant is calculating the accereration which depends on the force and mass $\vec{a}=\vec{F}/m$. Newtonian gravity says that the force on body 1 is $\vec{F}=\frac{Gm\_{1}m\_{2}}{\vert\vec{r}\vert^3}\vec{r}$ where $\vec{r}$ is the the displacement between the bodies $\vec{r}=\vec{x}\_{2}-\vec{x}\_{1}$, and an analogous expression holds for body 2. We have to decide on masses $m\_{1}$ and $m\_{2}$ as well as a system of units, which will determine the constant $G$. In code, our full simulation is then
 
 ```py
 # functions for working with vectors implemented as lists
