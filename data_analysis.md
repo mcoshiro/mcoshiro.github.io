@@ -21,6 +21,7 @@ Once you have installed miniforge, you can create a python environment, which we
 ```sh
 conda create --name hep_default python=3.12
 conda install conda-forge::coffea 
+conda install awkward-pandas
 conda install jupyterlab
 ```
 
@@ -154,7 +155,7 @@ Muons are produced by cosmic rays hitting the earth's atmosphere. The mass of a 
 
 ## Functions and control in python
 
-More complex control of a program can be acheived with compound statements including functions, conditionals, and loops. You can define a function in python using a format similar to the following:
+More complex control of a program can be acheived with compound statements including functions, conditionals, and loops. You can define a **function** in python using a format similar to the following:
 
 ```py
 def hypotenuse(a, b):
@@ -223,7 +224,7 @@ def hypotenuse(a: float, b: float) -> float:
   return c
 ```
 
-To have code that executes in certain cases, you can use `if` statements. For example:
+To have code that executes in certain cases, you can use **if statements**. For example:
 
 ```py
 def absolute_value(x):
@@ -237,7 +238,7 @@ def absolute_value(x):
 
 If the first `if` condition (`x > 0`) is met, the subsequent indented code will be run. If it is not met, the code will check the next `elif` condition (`x == 0`) and run the subsequent code if that condition is met. This can continue for any number of `elif`s. Finally, if no conditions are met, the `else` block will run. Note that `elif` and `else` are not required--- you can just do nothing if the original condition(s) are not met.
 
-To have code that executes repeatedly, one can use loops. For example, a while loop will execute a set of statements repeatedly as long as a particular condition is true:
+To have code that executes repeatedly, one can use loops. For example, a **while loop** will execute a set of statements repeatedly as long as a particular condition is true:
 
 ```py
 def factorial(x):
@@ -250,7 +251,7 @@ def factorial(x):
 
 In this case, the indented code block after the `while` will continue to run until the condition (`x > 0`) is no longer true. 
 
-Another form of loop is the for loop:
+Another form of loop is the **for loop**:
 
 ```py
 def count_electrons():
@@ -275,7 +276,16 @@ def factorial(x):
   return x_factorial
 ```
 
-### Exercise 1.3: Newtonian simulation
+### Exercise 1.3: Get filenames
+
+While most high-energy physics programming involves numerical data, it is not uncommon to work with strings as well. A typical case is dealing with filenames. Suppose we have three years of data files stored in folders named `2022`, `2023`, `2024`. In each folder are 6 files: `DY.root`, `TT.root`, `tW.root`, `WW.root`, `WZ.root`, and `ZZ.root`. Write a loop to generate a list of all filenames across all years (ex. t`2022/DY.root`). Note that you can use the `append` function to add data to the end of an existing list:
+
+```py
+my_list = [1, 2, 3]
+my_list.append(4)
+```
+
+### Exercise 1.4: Newtonian simulation
 
 Let us try writing a simple simulation of classical physics. Suppose we have a planar two-body system interacting through gravity such as the earth and the moon. We can specify the position $\vec{x}$ and velocity $\vec{v}$ vectors of each body in the x-y plane with a pair of numbers. We will use a python list for this:
 
@@ -370,7 +380,7 @@ print(f'Body 2 position: {pos_body2}, velocity: {vel_body2}')
 
 You can try the simulation out yourself. When you've convinced yourself you understand this example, try writing a simulation for throwing a ball on the surface of the earth. First, you can just assume gravity is a constant force pulling in the negative y direction: $\vec{F}=-gm\hat{y}$. How far does your simulation predict the ball would travel if you threw it from a height of 1.5 m with a velocity of $\vec{v}=(10, 3)$ m/s? To figure out when the ball "hits" the ground, you may want to use an `if` statement. What if you add in a force of air resistance $\vec{F}=-(0.00518 \mathrm{kg}/\mathrm{m})\vert\vec{v}\vert\vec{v}$?
 
-### Exercise 1.4: Four-vector coordinate conversion
+### Exercise 1.5: Four-vector coordinate conversion
 
 For this exercise, we will work in natural units where $c=1$. In special relativity, space and time msut be treated together as spacetime as the space and time axes differ for different observers. This means points in spacetime are specified by a 4D vector $(t, x, y, z)$. The energy and spatial momentum also appear as a 4D vector called the four-momentum $(E, p\_{x}, p\_{y}, p\_{z})$.
 
@@ -398,7 +408,7 @@ where atan2 is the [2-argument arctangent](https://en.wikipedia.org/wiki/Atan2).
 
 Suppose we have a pair of electrons whose collider coordinates in units of GeV are `[40.4872, -0.4971, 0.5084, 0.000511]` and `[40.4872, 0.4971, -2.6331, 0.000511]`. Convert these to rectilinear coordinates, add them together, and convert back to collider coordinates. What is the invariant mass $m$ of the sum? If the electrons came from the decay of a parent particle, this would be the mass of this particle. If you are curious, you can check the [PDG](https://pdg.lbl.gov/) for what particle this might be.
 
-### Exercise 1.5: Higher-order functions
+### Exercise 1.6: Higher-order functions
 
 You can also use functions the same way you would use data of other types in terms of assigning functions to variables and providing them as inputs to other functions. 
 
@@ -440,8 +450,122 @@ Once you understand how this works, try writing analogous `get_pt`, `get_eta`, a
 
 This example is basically how functions are applied on real physics data when using ex. numba and awkward, as you will learn later.
 
-### Exercise 1.6: Get filenames
-
 ## Classes and libraries in python
 
-# Data analysis libraries: numpy, pandas, uproot, matplotlib
+You are probably familiar with the fact that computers can store much more complicated data than just numbers, booleans, and strings. These more complicated data are generally built up from simpler pieces. For example, an image can be decomposed into pixels, each of which consists of some numbers to determine it's color, or audio data can be broken down into a long sequence of numeric data representing the amplitude of the sound wave over time.
+
+A **class** is effectively a custom type capable of storing both data and functions. Consider the example below:
+
+```py
+class Particle:
+   def __init__(self, px, py, pz, m):
+     self.px = px
+     self.py = py
+     self.pz = pz
+     self.m = m
+
+  def get_energy(self):
+     return math.sqrt(self.px**2+self.py**2+self.pz**2+m**2)
+```
+
+This defines a `Particle` type, which is initialized with four numbers representing its spatial momenta and mass. The special `__init__` function defines how a class is initialized. The data stored in an instance of the class as well as the functions associated with a class can be using `.`. So if `x` is a variable of type `Particle`, `x.m` would be its mass and `x.get_energy()` would call the `get_energy` function. Variables belonging to an instance of the class are accessed from within the class by using the special variable `self`, which is always passed as the first argument of a class function when called with the `.` operator.
+
+```py
+x = Particle(4.5, 3.3, 6.5, 0.106)
+print(x.m)
+print(x.get_energy())
+```
+
+A class can "inherit" the data of a parent class in the following way:
+
+```py
+class Electron(Particle):
+   def __init__(self, px, py, pz):
+     self.px = px
+     self.py = py
+     self.pz = pz
+     self.m = 0.511
+```
+
+Any functions that are not overridden (redefined) by child class are inherited from their parent. In this case, the `Electron` class does not override the `get_energy` function, so we can run the code
+
+```py
+x = Electron(4.5, 3.3, 6.5)
+x.get_energy()
+```
+
+While implementing functionality from the ground up is useful for learning, in practice, most programming uses **libraries**, collection of useful elements like functions and classes that have already been written. You have already seen us use Python's `math` library to get access to functions like `log`, `sqrt`, etc. In python, libraries can be imported using an import statement
+
+```py
+import numpy
+```
+
+You can also define a shorthand name for the library
+
+```py
+import numpy as np
+```
+
+this would allow you to access functions like `numpy.sum` using `np.sum`. You can even import functions from a library so that you don't need the library name at all
+
+```py
+from numpy import sum
+```
+
+However, this should be done with caution since there are often functions with the same name in multiple libraries (ex. `numpy.sum` versus `awkward.sum`). There are a set of [standard libaries](https://docs.python.org/3/library/) that you always have access to with any python installation, but you can also add your own libraries by installing them as a package. This is what we did when we first set up our installation with
+
+```sh
+conda install <packagename>
+```
+
+Much of the rest of this tutorial will focus on working with specific libraries used for data analysis.
+
+# Data analysis libraries
+
+## numpy and awkward: getting started
+
+Interpreting python statements is actually rather slow, so we would like to manipulate large amounts of data with just a few commands. This is where the `numpy` and `awkward` libaries come in. These libraries allow us to do "vectorized" operations across large amounts of data in just one statement. Throughout this section, we will assume we have imported `numpy` and `awkward` as follows:
+
+```py
+import numpy as np
+import awkward as ak
+```
+
+The basic class introduced by numpy is the `np.ndarray` (alias `np.array`). This acts similarly to a Python list, except that the data must all be the same type, i.e. `[3.0, 'Hello']` is a valid Python list, but `np.array([3.0, 'Hello'])` will throw an error. The advantage of numpy lists is that operations are "vectorized" so
+
+```py
+x_array = np.array([3.0, 7.2, 2.3, 8.4, 9.7, 4.1])
+y_array = np.array([1.7, 7.0, 8.4, 5.3, 1.7, 8.9])
+
+z_array = x_array * y_array
+```
+
+can be done quickly in one `*` operation, where as the analogous version with lists requires a loop and is much slower:
+
+```py
+x_list = [3.0, 7.2, 2.3, 8.4, 9.7, 4.1]
+y_list = [1.7, 7.0, 8.4, 5.3, 1.7, 8.9]
+z_list = []
+
+for x, y in zip(x_list, y_list):
+  z_list.append(x*y)
+```
+
+As demonstrated above, "vectorized" here does not mean in the math sense of the word vector. Rather, operations like `+`, `-`, `*`, `/`, `==`, `<`, and so forth are performed component-wise for each component in the array.
+
+<!-- more on numpy -->
+
+Awkward array or `awkward` serves as an extension to `numpy` for dealing with data that are not rectangular arrays. This is common in particle physics where the data might consist of a collection of particles for each "event", but the number of particles is different for each event.
+
+`awkward`'s array class is just called `ak.Array` and can be used just like `np.array`:
+
+```py
+x = ak.Array([[1.0, 8.7, 5.7], [4.8], [7.0, 1.5]])
+y = ak.Array([[3.1, 8.0, 1.2], [7.8], [5.3, 0.2]])
+
+z = x + y
+```
+
+## numpy and awkward: useful functions
+
+## data analysis: uproot, pandas, and matplotlib/mplhep
