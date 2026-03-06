@@ -10,7 +10,7 @@ It is forseen that this tutorial will cover programming in Python; libraries for
 
 ## Getting started and documentation in science
 
-You will need to install python, ideally via a package manager such as [miniforge](https://github.com/conda-forge/miniforge). If you are using Windows, install Windows Subsystem for Linux, after which the instructions will be the same. Open a shell ("terminal" on MAC) and install miniforge with:
+You will need to install python, ideally via a package manager such as [miniforge](https://github.com/conda-forge/miniforge). If you are using Windows, install Windows Subsystem for Linux, after which the instructions will be the same. Open a shell ("terminal" on Mac) and install miniforge with:
 
 ```sh
 curl -L -O "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
@@ -108,7 +108,7 @@ With these mean lifetimes, how far (in meters) would each of these particles tra
 
 In special relativity, many nonrelativistic calculations are corrected by the Lorentz factor $\gamma = \frac{1}{\sqrt{1-v^2/c^2}}=\frac{E}{m}$. For example, the magnitude of the momentum of a particle is $\vec{p}=\gamma m \vec{v}$ and the time measured by an outside observer after a time $t$ has elapsed in the frame of the particle will be $\gamma t$.
 
-Muons are produced by cosmic rays hitting the earth's atmosphere. The mass of a muon is about $106 \mathrm{MeV}/c^2$ and its rest frame mean lifetime is $2.2\times 10^{-6}$ s. Consider muons with momentum 200 MeV/c, 1 GeV/c, and 5 GeV/c. Using the relation $E^2=m^2c^4+\vert\vec{p}\vert^2c^{2}$ in natural units, compute the gamma factor for each. The gamma factor is dimensionless and thus identical in all unit systems. Calculate the velocity in m/s for each of these muons using $1 \mathrm{ eV}=1.602\times 10^{-19} \mathrm{ J}$. Accounting for time dilation, the average distance travelled is $\gamma\tau v$. Calculate this for each muon. If a cosmic ray shower muon is typically produced 20 km above sea level, which of these might you expect to reach sea level?
+Muons are produced by cosmic rays hitting the earth's atmosphere. The mass of a muon is about $\tau = 106 \mathrm{MeV}/c^2$ and its rest frame mean lifetime is $2.2\times 10^{-6}$ s. Consider muons with momentum 200 MeV/c, 1 GeV/c, and 5 GeV/c. Using the relation $E^2=m^2c^4+\vert\vec{p}\vert^2c^{2}$ in natural units, compute the gamma factor for each. The gamma factor is dimensionless and thus identical in all unit systems. Calculate the velocity in m/s for each of these muons using $1 \mathrm{ eV}=1.602\times 10^{-19} \mathrm{ J}$. Accounting for time dilation, the average distance travelled is $\gamma\tau v$. Calculate this for each muon. If a cosmic ray shower muon is typically produced 20 km above sea level, which of these might you expect to reach sea level?
 
 ## Functions and control in python
 
@@ -168,29 +168,7 @@ count_electrons(id_list)
 
 The `for` loop allows one to iterate over the elements of a collection such as a list.
 
-### Exercise 1.3: Four-vector coordinate conversion
-
-For this exercise, we will work in natural units where $c=1$. In special relativity, space and time msut be treated together as spacetime as the space and time axes differ for different observers. This means points in spacetime are specified by a 4D vector $(t, x, y, z)$. The energy and spatial momentum also appear as a 4D vector called the four-momentum $(E, p\_{x}, p\_{y}, p\_{z})$.
-
-In collider experiments, 4-momenta components are often given in another format that is related to spherical coordinates: the transverse momentum $p\_\mathrm{T}$, the [pseudorapidity](https://en.wikipedia.org/wiki/Pseudorapidity) $\eta$, the azimuthal angle $\phi$, and the invariant mass $m$. These are related to the rectilinear coordinates via the transformations:
-
-$$E = \sqrt{(p\_\mathrm{T}\mathrm{cosh}\eta)^2+m^2}$$
-$$p\_{x} = p\_\mathrm{T}\cos\phi$$
-$$p\_{y} = p\_\mathrm{T}\sin\phi$$
-$$p\_{z} = p\_\mathrm{T}\mathrm{sinh}\eta$$
-
-and in reverse:
-
-$$p\_\mathrm{T}=\sqrt{p\_x^2+p\_y^2}$$
-$$\eta = -\log\left[\tan\left(\frac{\theta}{2}\right)\right] = \mathrm{arctanh}\left(\frac{p\_z}{p\_x^2+p\_y^2+p\_z^2}\right)$$
-$$\phi = \mathrm{atan2}(y, x)$$
-$$m = \sqrt{E^2-p\_x^2-p\_y^2-p\_z^2}$$
-
-where atan2 is the [2-argument arctangent](https://en.wikipedia.org/wiki/Atan2). Write functions to convert between coordinates given as Python lists `[e, px, py, pz]` and `[pt, eta, phi, m]` in both directions. You can find the relevant functions (sin, cos, arctanh, etc.) in the Python [math](https://docs.python.org/3/library/math.html) library. 
-
-Suppose we have a pair of electrons whose collider coordinates in units of GeV are `[40.4872, -0.4971, 0.5084, 0.000511]` and `[40.4872, 0.4971, -2.6331, 0.000511]`. Convert these to rectilinear coordinates, add them together, and convert back to collider coordinates. What is the invariant mass $m$? If the electrons came from the decay of a parent particle, this would be the mass of this particle. If you are curious, you can check the [PDG](https://pdg.lbl.gov/) for what particle this might be.
-
-### Exercise 1.4: Newtonian simulation
+### Exercise 1.3: Newtonian simulation
 
 Let us try writing a simple simulation of classical physics. Suppose we have a planar two-body system interacting through gravity such as the earth and the moon. We can specify the position $\vec{x}$ and velocity $\vec{v}$ vectors of each body in the x-y plane with a pair of numbers. We will use a python list for this:
 
@@ -285,6 +263,66 @@ print(f'Body 2 position: {pos_body2}, velocity: {vel_body2}')
 
 You can try the simulation out yourself. When you've convinced yourself you understand this example, try writing a simulation for throwing a ball on the surface of the earth. First, you can just assume gravity is a constant force pulling in the negative y direction: $\vec{F}=-gm\hat{y}$. How far does your simulation predict the ball would travel if you threw it from a height of 1.5 m with a velocity of $\vec{v}=(10, 3)$ m/s? To figure out when the ball "hits" the ground, you may want to use an `if` statement. What if you add in a force of air resistance $\vec{F}=-(0.00518 \mathrm{kg}/\mathrm{m})\vert\vec{v}\vert\vec{v}$?
 
+### Exercise 1.4: Four-vector coordinate conversion
+
+For this exercise, we will work in natural units where $c=1$. In special relativity, space and time msut be treated together as spacetime as the space and time axes differ for different observers. This means points in spacetime are specified by a 4D vector $(t, x, y, z)$. The energy and spatial momentum also appear as a 4D vector called the four-momentum $(E, p\_{x}, p\_{y}, p\_{z})$.
+
+In collider experiments, 4-momenta components are often given in another format that is related to spherical coordinates: the transverse momentum $p\_\mathrm{T}$, the [pseudorapidity](https://en.wikipedia.org/wiki/Pseudorapidity) $\eta$, the azimuthal angle $\phi$, and the invariant mass $m$. These are related to the rectilinear coordinates via the transformations:
+
+$$E = \sqrt{(p_\mathrm{T}\mathrm{cosh}\eta)^2+m^2}$$
+$$p_{x} = p_\mathrm{T}\cos\phi$$
+$$p_{y} = p_\mathrm{T}\sin\phi$$
+$$p_{z} = p_\mathrm{T}\mathrm{sinh}\eta$$
+
+and in reverse:
+
+$$p_\mathrm{T}=\sqrt{p_x^2+p_y^2}$$
+$$\eta = -\log\left[\tan\left(\frac{\theta}{2}\right)\right] = \mathrm{arctanh}\left(\frac{p_z}{p_x^2+p_y^2+p_z^2}\right)$$
+$$\phi = \mathrm{atan2}(y, x)$$
+$$m = \sqrt{E^2-p_x^2-p_y^2-p_z^2}$$
+
+where atan2 is the [2-argument arctangent](https://en.wikipedia.org/wiki/Atan2). Write functions to convert between coordinates given as Python lists `[e, px, py, pz]` and `[pt, eta, phi, m]` in both directions. You can find the relevant functions (sin, cos, arctanh, etc.) in the Python [math](https://docs.python.org/3/library/math.html) library. 
+
+Suppose we have a pair of electrons whose collider coordinates in units of GeV are `[40.4872, -0.4971, 0.5084, 0.000511]` and `[40.4872, 0.4971, -2.6331, 0.000511]`. Convert these to rectilinear coordinates, add them together, and convert back to collider coordinates. What is the invariant mass $m$ of the sum? If the electrons came from the decay of a parent particle, this would be the mass of this particle. If you are curious, you can check the [PDG](https://pdg.lbl.gov/) for what particle this might be.
+
 ### Exercise 1.5: Higher-order functions
 
+You can also use functions the same way you would use data of other types in terms of assigning functions to variables and providing them as inputs to other functions. 
 
+Suppose we have some data about 20 photons formatted a list where the list indices indicate the photon:
+
+```py
+photon_px = [10.27, 10.28, -9.104, 14.25, 8.769, -2.154, 4.331, 6.5, 14.7,
+             5.247, 17.56, -1.196, -29.26, 2.582, -4.645, 1.36, 20.46, 
+             -16.98, 7.724, 16.49]
+photon_py = [-24.6, 12.66, -6.222, 17.74, 5.169, -1.032, -16.75, 10.99,
+             0.8502, -0.4955, 13.14, -5.817, -3.965, -4.662, 4.764, 1.399,
+             31.12, 3.2, -4.735, 4.87]
+photon_pz = [-4.75, -0.5737, 17.99, -2.512, 10.83, 6.137, -13.77, 7.15, 
+             24.49, -4.812, 15.28, -43.1, 23.73, -23.94, -0.9966, -0.8781,
+             10.87, 23.31, -3.082, -5.072]
+```
+
+We will take these momenta to be in GeV (using natural units). We can write a function that will evaluate a function `func` for each photon in the list:
+
+```py
+def photon_fn_evaluator(photon_px, photon_py, photon_pz, func):
+  result = []
+  for px, py, pz in zip(photon_px, photon_py, photon_pz):
+    result.append(func(px, py, pz))
+  return result
+```
+
+So, for example, the energy of a photon is given by $E=\sqrt{|\vec{p}|^2+m^2}=\sqrt{p\_x^2+p\_y^2+p\_z^2}$ as photons are massless. So, we can get the energy by combining a `get_energy` function with the `photon_fn_evaluator`:
+
+```py
+def get_energy(px, py, pz):
+  return (px**2+py**2+pz**2)**0.5
+
+photon_e = photon_fn_evaluator(photon_px, photon_py, photon_pz, get_energy)
+print(photon_e)
+```
+
+Once you understand how this works, try writing analogous `get_pt`, `get_eta`, and `get_phi` functions using the conversions in the previous problem and run them with `photon_fn_evaluator`. What are the $p\_\text{T}$, $\eta$, and $\phi$ values for the photons in this example?
+
+This example is basically how functions are applied on real physics data when using ex. numba and awkward, as you will learn later.
