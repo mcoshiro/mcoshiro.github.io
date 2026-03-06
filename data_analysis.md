@@ -42,9 +42,9 @@ In scientific research, it is very important that you save all of your work in a
 
 ## Expressions and variables in python
 
-A good introductory computer science course text in python can be found [here](https://www.composingprograms.com/). 
+A good introductory computer science course text in python can be found [here](https://www.composingprograms.com/). These notes will just give a somewhat abridged rundown of useful concepts.
 
-The first thing you can try is running code to do numeric calculations such as
+A programming language allows one to build up programs by combining basic elements called **statements**. The first thing you can try is running code to do numeric calculations such as
 
 ```py
 5+4**2
@@ -56,27 +56,27 @@ If you are using Jupyter, simply type this into a cell, then press shift+enter t
 import math
 ```
 
-after which you can evaluate expressions like
+(note this import statement needs to be executed once per notebook/script) after which you can evaluate expressions like
 
 ```py
 5.0*math.sqrt(7.0)-math.log(2.0)
 ```
 
-The symbols `+`, `-`, `*`, `/`, and `**` are used to represent addition, subtraction, multiplication, division, and exponentiation respectively. You can see what functions are available from the math library using the [documentation page](https://docs.python.org/3/library/math.html).
+The symbols `+`, `-`, `*`, `/`, `%`and `**` are used to represent addition, subtraction, multiplication, division, division remainder (modulo), and exponentiation respectively. You can see what functions are available from the math library using the [documentation page](https://docs.python.org/3/library/math.html).
 
-You can also store values in variables using the `=` operator, for example:
+You can also write assignment statements, which store values in **variables** using the `=` operator, for example:
 
 ```py
 z_mass = 91.1876
 ```
 
-This line stores the value `91.1876` in the computer memory at a location that we have named `z_mass`. We can then retrieve this information later
+This line stores the value `91.1876` in the computer memory at a location that we have named `z_mass`. We call `z_mass` a variable. We can then retrieve this information in later statements:
 
 ```py
 math.sqrt(2)*z_mass
 ```
 
-We can work with many different **types** of data. Some of the common basic types in python are:
+All data whether literals (fixed data like `91.1876` or `3`) or variables have a particular **type**. Some of the basic types in python are:
 
 | Type   | Description                               | Examples                |
 |--------|-------------------------------------------|-------------------------|
@@ -87,11 +87,53 @@ We can work with many different **types** of data. Some of the common basic type
 | list   | Ordered collection of data                | `[3.8, -2.2, 4.0, 6.3]` |
 | dict   | Map from "keys" to "values"               | `{1: 'CMS', 2: 'LHCb'}` |
 
-A common simple use of programming in high-energy physics is serve as a calculator. The exercise below 
+Trying to use data of a given type in the wrong way will result in an error. For example, both `5.0+3.2` and `"Hello "+"world"` are valid statements; one is normal addition of numbers while the `+` operator for strings acts as concatenation. But, trying `5.0 + "Hello"` will give an error since adding a floating point number and a string is not well defined. 
+
+In an assignment statement, the right-hand side of the statement is evaluated before the new value is assigned. So if a variable `a` currently contains the integer 5, then
+
+```py
+a = a + 1
+```
+
+will calculate `a+1`, then overwrite the value stored in the variable `a` making it 6. This is common enough that there is shorthand for it: `x += y` is equivalent to `x = x + y` with analogous operators `-=`, `*=`, and `/=` as well.
+
+Order of operations roughly follows the standards for math with which you are familiar with, with parentheses always coming first. So the expression
+
+```py
+max(math.log(33.2), math.sin(4.3))
+```
+
+first evaluates $\log(33.2)$ and $\sin(4.3)$, then takes the maximum of the two. When in doubt, you can use parentheses to make sure the operations are performed in the order you want.
+
+Some other basic operations that are useful for comparisons are listed below
+
+| Operation | Input types | Output type | Description                         |
+|-----------|-------------|-------------|-------------------------------------|
+| `a == b`  | any         | bool        | `a` equals `b`                      |
+| `a < b`   | any         | bool        | `a` is less than `b`                |
+| `a <= b`  | any         | bool        | `a` is less than or equal to `b`    |
+| `a > b`   | any         | bool        | `a` is greater than `b`             |
+| `a >= b`  | any         | bool        | `a` is greater than or equal to `b` |
+| `a != b`  | any         | bool        | `a` is not equal to `b`             |
+| not a     | bool        | bool        | inverts true and false              |
+| a or b    | bool, bool  | bool        | true iff `a` or `b` is true         |
+| a and b   | bool, bool  | bool        | true iff `a` and `b` are true       |
+
+Finally, it is worth again emphasizing that keeping all your work organized and easily understandible is crucial for scientists. If you are using Jupyter, you can change the cell type from "Code" to "Markdown" or "Raw" to write down notes in [markdown](https://www.markdownguide.org/basic-syntax/) or plain text. If are not using Jupyter or you want to add comments directly into your code you can use a `#` to add a comment into your python code:
+
+```
+# calculate the energy and momentum
+e = e1 + e2
+p = p1 + p2
+# now calculate the invariant mass
+m = e**2 - p**2
+```
+
+A common simple use of programming in high-energy physics is serve as a calculator. The exercises below will help you get familiar with using python in this way.
 
 ### Exercise 1.1: Natural units
 
-In particle physics, we often use "natural units" where the speed of light c and the reduced Planck constant $\hbar$ are equal to 1. To have c=1 when c is usually about $3.0\times 10^8$ meters per second, we measure distance and time in the "same" units. For example, we can define a new unit of *time* called meters such that 1 second is equal to about $3.0\times 10^8$ meters of time and thus 1 meter of time is about $3.33\times 10^{-9}$ seconds. Then, c is equal to $\frac{3.0\times 10^8 \mathrm{ m}}{3.0\times 10^8 \mathrm{ m}}=1$. Similarly, to set $\hbar$ to 1 when it is usually $1.054\times 10^{-34}$ joule seconds, we measure time and energy (and distance and momentum) in inverse units. So, we define an inverse joule of *time* to be about $1.054\times 10^{-34}$ seconds, which means 1 second is about $9.49\times 10^{33}$ inverse joules. Then $\hbar$ is $(1.054\times 10^{-34} \mathrm{ J})(9.49\times 10^{33} \mathrm{ J}^{-1})=1$. To check your understanding, consider how far is 1 second of distance? How much is 1 inverse second of energy? 1 inverse joule of distance (hint: this requires $\hbar=c=1$)?
+In particle physics, we often use "natural units" where the speed of light $c$ and the reduced Planck constant $\hbar$ are equal to 1. To have $c=1$ when $c$ is usually about $3.0\times 10^8$ meters per second, we measure distance and time in the "same" units. For example, we can define a new unit of *time* called meters such that 1 second is equal to about $3.0\times 10^8$ meters of time and thus 1 meter of time is about $3.33\times 10^{-9}$ seconds. Then, c is equal to $\frac{3.0\times 10^8 \mathrm{ m}}{3.0\times 10^8 \mathrm{ m}}=1$. Similarly, to set $\hbar$ to 1 when it is usually $1.054\times 10^{-34}$ joule seconds, we measure time and energy (and distance and momentum) in inverse units. So, we define an inverse joule of *time* to be about $1.054\times 10^{-34}$ seconds, which means 1 second is about $9.49\times 10^{33}$ inverse joules. Then $\hbar$ is $(1.054\times 10^{-34} \mathrm{ J})(9.49\times 10^{33} \mathrm{ J}^{-1})=1$. To check your understanding, consider how far is 1 second of distance? How much is 1 inverse second of energy? 1 inverse joule of distance (hint: this requires $\hbar=c=1$)?
 
 Given that the reduced planck constant is approximatley equal to $\hbar\approx 6.582\times 10^{-16}$ eV s, use python to calculate the mean lifetime of the following particles in seconds given their measured decay rate ("width") in units of energy from the [particle data book](https://pdg.lbl.gov/). Note the mean lifetime is simply the inverse of the decay rate `mean_lifetime=1.0/decay_rate`.
 
@@ -112,7 +154,7 @@ Muons are produced by cosmic rays hitting the earth's atmosphere. The mass of a 
 
 ## Functions and control in python
 
-You can define a function in python using a format similar to the following:
+More complex control of a program can be acheived with compound statements including functions, conditionals, and loops. You can define a function in python using a format similar to the following:
 
 ```py
 def hypotenuse(a, b):
@@ -120,13 +162,68 @@ def hypotenuse(a, b):
   return c
 ```
 
-The keyword `def` comes first, followed by the function name (in this example `add`), the arguments (inputs) to the functions in parentheses, then a semicolon. The body of the function defining what it does it then specified by a series of indented lines. The output of the function can be specified by a line with the `return` keyword. One can then call this function
+The keyword `def` comes first, followed by the function name (in this example `hypotenuse`), the arguments (inputs) to the functions in parentheses, then a semicolon. The body of the function defining what it does it then specified by a series of indented lines. The output of the function can be specified by a line with the `return` keyword. One can then call this function
 
 ```py
 hypotenuse(3.0, 4.0)
 ```
 
-To have code that executes in certain cases, one can use `if` statements. For example:
+Each variable has a **scope** from which it is visible. Variables assigned outside of functions are said to have global scope and can be accessed from anywhere, but variables assigned inside of a function can only be accessed within that function (including other functions defined in the same parent funtion). So, for example, the following code will result in an error since `b` is not visible outside of the `set_b` function
+
+```py
+def set_b(x):
+  b = x
+
+def add_b(x):
+  return x+b
+
+set_b(3)
+add_b(5)
+```
+
+Functions can also be treated as a data, just like any other type. This means they can be assigned to variables or even provided as inputs or outputs from other functions ("higher-order functions"). The following code shows how one can create a function whose output is a function that adds a number to its input.
+
+```py
+def make_adder(summand):
+  def add_summand(x):
+    return x+summand
+  return add_summand
+
+add3 = make_adder(3)
+add3(5)
+```
+
+Functions can be provided with "default arguments" that will be used if the user does not provide an argument. This can be seen in the following example:
+
+```py
+def get_energy(momentum, mass=0.0):
+  return math.sqrt(momentum+mass)
+
+print(get_energy(16.8))
+print(get_energy(16.8, 0.45))
+```
+
+For those familiar with other programming languages, it is worth noting that Python does not support function overloading (multiple functions with the same name but different input types).
+
+There are some other optional but common conventions you will likely see when looking at Python code. It is common to have a "docstring" in triple quotes at the beginning of a function explaining what the function does. You may also see the intended types of the input and output variables of a function specified with `:` and `->` respectively. Note that unlike other programming languages, this does not restrict the input types, it is simply a guide for users. These are demonstrated in the following code snippet:
+
+```py
+def hypotenuse(a: float, b: float) -> float:
+  """Calculates the length of a hypotenuse of a right triangle with the 
+  Pythagorean theorem
+
+  Args:
+    a: length of one side
+    b: length of one side
+
+  Returns:
+    length of the hypotenuse
+  """
+  c = math.sqrt(a**2+b**2)
+  return c
+```
+
+To have code that executes in certain cases, you can use `if` statements. For example:
 
 ```py
 def absolute_value(x):
@@ -140,7 +237,7 @@ def absolute_value(x):
 
 If the first `if` condition (`x > 0`) is met, the subsequent indented code will be run. If it is not met, the code will check the next `elif` condition (`x == 0`) and run the subsequent code if that condition is met. This can continue for any number of `elif`s. Finally, if no conditions are met, the `else` block will run. Note that `elif` and `else` are not required--- you can just do nothing if the original condition(s) are not met.
 
-To have code that executes repeatedly, one can use loops. For example:
+To have code that executes repeatedly, one can use loops. For example, a while loop will execute a set of statements repeatedly as long as a particular condition is true:
 
 ```py
 def factorial(x):
@@ -151,7 +248,9 @@ def factorial(x):
   return x_factorial
 ```
 
-In this case, the indented code block after the `while` will continue to run until the condition (`x > 0`) is no longer true. Another form of loop is the `for` loop:
+In this case, the indented code block after the `while` will continue to run until the condition (`x > 0`) is no longer true. 
+
+Another form of loop is the for loop:
 
 ```py
 def count_electrons():
@@ -166,7 +265,15 @@ id_list = [3, 21, -4, 11, -15, 23, 12, -2, 2, 11, 25, 21]
 count_electrons(id_list)
 ```
 
-The `for` loop allows one to iterate over the elements of a collection such as a list.
+The for loop allows one to iterate over the elements of a collection such as a list. You will often see `for` loops used together with `range(start, stop, step)`, which produces a sequence of number starting at `start` (defaultly zero), stopping at `stop` (not including `stop`), and incrementing by `step` (defaultly one) each time. So, we could implement the factorial function from before with a for loop using:
+
+```py
+def factorial(x):
+  x_factorial = 0
+  for y in range(1, x+1):
+    x_factorial *= y
+  return x_factorial
+```
 
 ### Exercise 1.3: Newtonian simulation
 
@@ -270,15 +377,21 @@ For this exercise, we will work in natural units where $c=1$. In special relativ
 In collider experiments, 4-momenta components are often given in another format that is related to spherical coordinates: the transverse momentum $p\_\mathrm{T}$, the [pseudorapidity](https://en.wikipedia.org/wiki/Pseudorapidity) $\eta$, the azimuthal angle $\phi$, and the invariant mass $m$. These are related to the rectilinear coordinates via the transformations:
 
 $$E = \sqrt{(p_\mathrm{T}\mathrm{cosh}\eta)^2+m^2}$$
+
 $$p_{x} = p_\mathrm{T}\cos\phi$$
+
 $$p_{y} = p_\mathrm{T}\sin\phi$$
+
 $$p_{z} = p_\mathrm{T}\mathrm{sinh}\eta$$
 
 and in reverse:
 
 $$p_\mathrm{T}=\sqrt{p_x^2+p_y^2}$$
+
 $$\eta = -\log\left[\tan\left(\frac{\theta}{2}\right)\right] = \mathrm{arctanh}\left(\frac{p_z}{p_x^2+p_y^2+p_z^2}\right)$$
+
 $$\phi = \mathrm{atan2}(y, x)$$
+
 $$m = \sqrt{E^2-p_x^2-p_y^2-p_z^2}$$
 
 where atan2 is the [2-argument arctangent](https://en.wikipedia.org/wiki/Atan2). Write functions to convert between coordinates given as Python lists `[e, px, py, pz]` and `[pt, eta, phi, m]` in both directions. You can find the relevant functions (sin, cos, arctanh, etc.) in the Python [math](https://docs.python.org/3/library/math.html) library. 
@@ -313,7 +426,7 @@ def photon_fn_evaluator(photon_px, photon_py, photon_pz, func):
   return result
 ```
 
-So, for example, the energy of a photon is given by $E=\sqrt{|\vec{p}|^2+m^2}=\sqrt{p\_x^2+p\_y^2+p\_z^2}$ as photons are massless. So, we can get the energy by combining a `get_energy` function with the `photon_fn_evaluator`:
+So, for example, the energy of a photon is given by $E=\sqrt{\vert\vec{p}\vert^2+m^2}=\sqrt{p\_x^2+p\_y^2+p\_z^2}$ as photons are massless. So, we can get the energy by combining a `get_energy` function with the `photon_fn_evaluator`:
 
 ```py
 def get_energy(px, py, pz):
@@ -326,3 +439,9 @@ print(photon_e)
 Once you understand how this works, try writing analogous `get_pt`, `get_eta`, and `get_phi` functions using the conversions in the previous problem and run them with `photon_fn_evaluator`. What are the $p\_\text{T}$, $\eta$, and $\phi$ values for the photons in this example?
 
 This example is basically how functions are applied on real physics data when using ex. numba and awkward, as you will learn later.
+
+### Exercise 1.6: Get filenames
+
+## Classes and libraries in python
+
+# Data analysis libraries: numpy, pandas, uproot, matplotlib
