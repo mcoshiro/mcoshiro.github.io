@@ -168,7 +168,34 @@ count_electrons(id_list)
 
 The `for` loop allows one to iterate over the elements of a collection such as a list.
 
-### Exercise 1.3: Newtonian simulation
+### Exercise 1.3: Four-vector coordinate conversion
+
+For this exercise, we will work in natural units where $c=1$. In special relativity, space and time msut be treated together as spacetime as the space and time axes differ for different observers. This means points in spacetime are specified by a 4D vector $(t, x, y, z)$. The energy and spatial momentum also appear as a 4D vector called the four-momentum `$(E, p_{x}, p_{y}, p_{z})$`.
+
+In collider experiments, 4-momenta components are often given in another format that is related to spherical coordinates: the transverse momentum `$p_{\mathrm{T}}$`, the [pseudorapidity](https://en.wikipedia.org/wiki/Pseudorapidity) $\eta$, the azimuthal angle $\phi$, and the invariant mass $m$. These are related to the rectilinear coordinates via the transformations:
+
+`$$
+E = \sqrt{p_{T}\mathrm{cosh}\eta)^2+m^2}
+p_{x} = p_{T}\cos\phi
+p_{y} = p_{T}\sin\phi
+p_{z} = p_{T}\mathrm{sinh}\eta
+$$`
+
+and in reverse:
+
+`$$
+p_{\mathrm{T}}=\sqrt{p_{\mathrm{x}}^2+p_{\mathrm{y}^2} \\
+\eta = -\log\left[\tan\left(\frac{\theta}{2}\right)\right] \\
+     = \mathrm{arctanh}\left(\frac{p_{z}}{p_x^2+p_y^2+p_z^2}\right) \\
+\phi = \mathrm{atan2}(y, x)\\
+m = \sqrt{E^2-p_x^2-p_y^2-p_z^2}
+$$`
+
+where atan2 is the [2-argument arctangent](https://en.wikipedia.org/wiki/Atan2). Write functions to convert between coordinates given as Python lists `[e, px, py, pz]` and `[pt, eta, phi, m]` in both directions. You can find the relevant functions (sin, cos, arctanh, etc.) in the Python [math](https://docs.python.org/3/library/math.html) library. 
+
+Suppose we have a pair of electrons whose collider coordinates in units of GeV are `[40.4872, -0.4971, 0.5084, 0.000511]` and `[40.4872, 0.4971, -2.6331, 0.000511]`. Convert these to rectilinear coordinates, add them together, and convert back to collider coordinates. What is the invariant mass $m$? If the electrons came from the decay of a parent particle, this would be the mass of this particle. If you are curious, you can check the [PDG](https://pdg.lbl.gov/) for what particle this might be.
+
+### Exercise 1.4: Newtonian simulation
 
 Let us try writing a simple simulation of classical physics. Suppose we have a planar two-body system interacting through gravity such as the earth and the moon. We can specify the position $\vec{x}$ and velocity $\vec{v}$ vectors of each body in the x-y plane with a pair of numbers. We will use a python list for this:
 
@@ -197,7 +224,7 @@ def vector_norm(x):
 
 We know that $\vec{v}=\frac{d\vec{x}}{dt}$ and $\vec{a}=\frac{d\vec{v}}{dt}$. So, if we pick a time $\Delta t$ that is short enough that $\vec{v}$ is roughly constant, then the new position after $\Delta t$ time is $\vec{x}\sb{\mathrm{new}} = \vec{x}+\frac{d\vec{x}}{dt}\Delta t=\vec{x}+\vec{v}\Delta t$ and similarly $\vec{v}\sb{\mathrm{new}}=\vec{v}+\vec{a}\Delta t$. We can then just repeat this over and over to get the position and velocity at some later time.
 
-The last ingrediant is calculating the accereration which depends on the force and mass $\vec{a}=\frac{F}/m$. Newtonian gravity says that the force on body 1 is $\vec{F}=\frac{Gm\sb{1}m\sb{2}}{\vert\vec{r}\vert^3}\vec{r}$ where $\vec{r}$ is the the displacement between the bodies $\vec{r}=\vec{x}\sb{2}-\vec{x}\sb{1}$, and an analogous expression holds for body 2. We have to decide on masses $m\sb{1}$ and $m\sb{2}$ as well as a system of units, which will determine the constant $G$. In code, our full simulation is then
+The last ingrediant is calculating the accereration which depends on the force and mass $\vec{a}=\vec{F}/m$. Newtonian gravity says that the force on body 1 is $\vec{F}=\frac{Gm\sb{1}m\sb{2}}{\vert\vec{r}\vert^3}\vec{r}$ where $\vec{r}$ is the the displacement between the bodies $\vec{r}=\vec{x}\sb{2}-\vec{x}\sb{1}$, and an analogous expression holds for body 2. We have to decide on masses $m\sb{1}$ and $m\sb{2}$ as well as a system of units, which will determine the constant $G$. In code, our full simulation is then
 
 ```py
 # functions for working with vectors implemented as lists
@@ -262,3 +289,7 @@ print(f'Body 2 position: {pos_body2}, velocity: {vel_body2}')
 ```
 
 You can try the simulation out yourself. When you've convinced yourself you understand this example, try writing a simulation for throwing a ball on the surface of the earth. First, you can just assume gravity is a constant force pulling in the negative y direction: $\vec{F}=-gm\hat{y}$. How far does your simulation predict the ball would travel if you threw it from a height of 1.5 m with a velocity of $\vec{v}=(10, 3)$ m/s? To figure out when the ball "hits" the ground, you may want to use an `if` statement. What if you add in a force of air resistance $\vec{F}=-(0.00518 \mathrm{kg}/\mathrm{m})\vert\vec{v}\vert\vec{v}$?
+
+### Exercise 1.5: Higher-order functions
+
+
