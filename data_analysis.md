@@ -170,26 +170,26 @@ The `for` loop allows one to iterate over the elements of a collection such as a
 
 ### Exercise 1.3: Four-vector coordinate conversion
 
-For this exercise, we will work in natural units where $c=1$. In special relativity, space and time msut be treated together as spacetime as the space and time axes differ for different observers. This means points in spacetime are specified by a 4D vector $(t, x, y, z)$. The energy and spatial momentum also appear as a 4D vector called the four-momentum `$(E, p_{x}, p_{y}, p_{z})$`.
+For this exercise, we will work in natural units where $c=1$. In special relativity, space and time msut be treated together as spacetime as the space and time axes differ for different observers. This means points in spacetime are specified by a 4D vector $(t, x, y, z)$. The energy and spatial momentum also appear as a 4D vector called the four-momentum $(E, p\_{x}, p\_{y}, p\_{z})$.
 
-In collider experiments, 4-momenta components are often given in another format that is related to spherical coordinates: the transverse momentum `$p_{\mathrm{T}}$`, the [pseudorapidity](https://en.wikipedia.org/wiki/Pseudorapidity) $\eta$, the azimuthal angle $\phi$, and the invariant mass $m$. These are related to the rectilinear coordinates via the transformations:
+In collider experiments, 4-momenta components are often given in another format that is related to spherical coordinates: the transverse momentum $p\_{\mathrm{T}}$, the [pseudorapidity](https://en.wikipedia.org/wiki/Pseudorapidity) $\eta$, the azimuthal angle $\phi$, and the invariant mass $m$. These are related to the rectilinear coordinates via the transformations:
 
-`$$
-E = \sqrt{p_{T}\mathrm{cosh}\eta)^2+m^2}
-p_{x} = p_{T}\cos\phi
-p_{y} = p_{T}\sin\phi
-p_{z} = p_{T}\mathrm{sinh}\eta
-$$`
+$$
+E = \sqrt{p\_{T}\mathrm{cosh}\eta)^2+m^2}
+p\_{x} = p\_{T}\cos\phi
+p\_{y} = p\_{T}\sin\phi
+p\_{z} = p\_{T}\mathrm{sinh}\eta
+$$
 
 and in reverse:
 
-`$$
-p_{\mathrm{T}}=\sqrt{p_{\mathrm{x}}^2+p_{\mathrm{y}^2} \\
+$$
+p\_{\mathrm{T}}=\sqrt{p\_{\mathrm{x}}^2+p\_{\mathrm{y}^2} \\
 \eta = -\log\left[\tan\left(\frac{\theta}{2}\right)\right] \\
-     = \mathrm{arctanh}\left(\frac{p_{z}}{p_x^2+p_y^2+p_z^2}\right) \\
+     = \mathrm{arctanh}\left(\frac{p\_{z}}{p\_x^2+p\_y^2+p\_z^2}\right) \\
 \phi = \mathrm{atan2}(y, x)\\
-m = \sqrt{E^2-p_x^2-p_y^2-p_z^2}
-$$`
+m = \sqrt{E^2-p\_x^2-p\_y^2-p\_z^2}
+$$
 
 where atan2 is the [2-argument arctangent](https://en.wikipedia.org/wiki/Atan2). Write functions to convert between coordinates given as Python lists `[e, px, py, pz]` and `[pt, eta, phi, m]` in both directions. You can find the relevant functions (sin, cos, arctanh, etc.) in the Python [math](https://docs.python.org/3/library/math.html) library. 
 
