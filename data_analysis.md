@@ -119,6 +119,21 @@ Some other basic operations that are useful for comparisons are listed below
 | not a     | bool        | bool        | inverts true and false              |
 | a or b    | bool, bool  | bool        | true iff `a` or `b` is true         |
 | a and b   | bool, bool  | bool        | true iff `a` and `b` are true       |
+| a & b     | int, int    | int         | bitwise and                         |
+| a | b     | int, int    | int         | bitwise or                          |
+| ~ a       | int         | int         | bitwise not                         |
+
+Lists and dictionaries can consist of multiple values, which are accessed using the `[]` operator.
+
+```py
+my_list = [1, 2, 3, 4]
+print(my_list[2])
+
+lhc_locations = {'ATLAS' : 1, 'ALICE' : 2, 'CMS' : 5, 'LHCb' : 8}
+print(lhc_locations['CMS'])
+```
+
+Note that the indexing for lists starts from 0, so the 0th element of `my_list`  above is `1`. You can add a new element to the end of a list using `my_list.append(new_element)`, and you can add a new element to dictionary with `my_dictionary[new_key]=new_element`. There are many more functions for working with lists and dictionaries that you can find in the [relevant](https://docs.python.org/3/library/stdtypes.html#sequence-types-list-tuple-range) [documentation](https://docs.python.org/3/library/stdtypes.html#mapping-types-dict).
 
 Finally, it is worth again emphasizing that keeping all your work organized and easily understandible is crucial for scientists. If you are using Jupyter, you can change the cell type from "Code" to "Markdown" or "Raw" to write down notes in [markdown](https://www.markdownguide.org/basic-syntax/) or plain text. If are not using Jupyter or you want to add comments directly into your code you can use a `#` to add a comment into your python code:
 
@@ -540,7 +555,7 @@ y_array = np.array([1.7, 7.0, 8.4, 5.3, 1.7, 8.9])
 z_array = x_array * y_array
 ```
 
-can be done quickly in one `*` operation, where as the analogous version with lists requires a loop and is much slower:
+can be done quickly in one `*` operation, where as the analogous version with Python lists requires a loop and is much slower because the command is evaluated for each element individually.
 
 ```py
 x_list = [3.0, 7.2, 2.3, 8.4, 9.7, 4.1]
@@ -551,13 +566,44 @@ for x, y in zip(x_list, y_list):
   z_list.append(x*y)
 ```
 
-As demonstrated above, "vectorized" here does not mean in the math sense of the word vector. Rather, operations like `+`, `-`, `*`, `/`, `==`, `<`, and so forth are performed component-wise for each component in the array.
+As demonstrated above, "vectorized" here does not mean in the math sense of the word vector. Rather, operations like `+`, `-`, `*`, `/`, `==`, `<`, and so forth are performed component-wise for each component in the array. Due to limitations in Python, boolean operators like `and`, `or`, and `not` can't be used, though for *booleans* specifically, you can use their bitwise versions `&`, `|`, and `~`.
 
-<!-- more on numpy -->
+Arrays in numpy can have any number of dimentions. You can access a component of a numpy array using the `[]` operator.
+
+```py
+x = np.array([[1, 2], [3, 4], [5, 6]])
+print(x[0, 0])
+```
+
+As shown in this example, when working with multidimensional arrays, multiple indices can be provided separated by a comma. The first index corresponds to the outermost array, while the last index corresponds to the innermost array.
+
+You can also use the range operator `:` to select a range of indices.
+
+```py
+print(x[1:3, :])
+```
+
+The range operator `:` has a default starting point of the first element (0) and a default ending point after the last element when not specified, meaning that `:` by itself with select all indices along a given axis.
+
+An important feature of numpy is **broadcasting** whereby a user can perform operations on two objects, even if they do not have the same shape (i.e. are not arrays of the same size). The most common usage of this is to broadcast a scalar value to an array. For example, the code below adds 2 to **each** component of the array `x`.
+
+```py
+x = x + 2
+```
+
+Broadcasting is frequently combined with boolean indexing. If `x` is an array and `y` is a boolean array of the same shape, then `x[y]` refers to the components of `x` for which `y` is true. As an example, the following code subtracts 2 from all components of an array `x` that are greater than 4.
+
+```py
+# create boolean array with broadcasting
+# greater_than_four will have the same shape as x
+greater_than_four = x > 4
+
+x[greater_than_four] -= 2
+```
 
 Awkward array or `awkward` serves as an extension to `numpy` for dealing with data that are not rectangular arrays. This is common in particle physics where the data might consist of a collection of particles for each "event", but the number of particles is different for each event.
 
-`awkward`'s array class is just called `ak.Array` and can be used just like `np.array`:
+`awkward`'s array class is just called `ak.Array` and can be used just like `np.array` in terms of providing vectorized operations, indexing, broadcasting, etc.
 
 ```py
 x = ak.Array([[1.0, 8.7, 5.7], [4.8], [7.0, 1.5]])
@@ -566,6 +612,115 @@ y = ak.Array([[3.1, 8.0, 1.2], [7.8], [5.3, 0.2]])
 z = x + y
 ```
 
-## numpy and awkward: useful functions
+Boolean indexing is commonly used with awkward arrays for masking/filtering.
 
-## data analysis: uproot, pandas, and matplotlib/mplhep
+```py
+z = z[z > 8.0]
+```
+
+We will often work with awkward Records. You can think of a record as a dictionary/class whose elements are awkward arrays.
+
+```py
+electrons = ak.Array({
+    'px' : [5.6, 8.7, 0.2],
+    'py' : [0.1, 5.0, 3.7],
+    'pz' : [3.7, 0.6, 5.5]
+})
+
+print(electrons.px)
+print(electrons.py)
+print(electrons.pz)
+```
+
+The advantage of using a record is that you can filter all the awkward arrays contained in the record in a single statement.
+
+```py
+electrons_pt = np.sqrt(electrons.px**2 + electrons.py**2)
+
+highpt_electrons = electrons[electrons_pt > 4.0]
+```
+
+You can also easily add new data to an existing record using the `[]` operator.
+
+```py
+electrons['quality'] = electron_quality
+```
+
+<!-- masking -->
+<!-- more on awkward -->
+
+## Reading and writing data with uproot
+
+In this section we will assume you have imported the following libraries:
+
+```py
+import uproot as ur
+```
+
+Most data in high energy physics is stored as "TTree" objects in **root** files. The uproot library provides a way to read and write ROOT files. You can open a file by using
+
+```py
+root_file = ur.open(filename)
+# use file below
+```
+
+or in a block with
+
+```py
+with uproot.open(filename) as root_file:
+  # use file in this block
+```
+
+You can see the named data in the file using `root_file.keys()` and access a given data structure using the `[]` operator. For example, if the file has a TTree named `'tree'`, you can access it via `root_file['tree']` and check the type via `type(root_file['tree'])`.
+
+TTrees consist of columnar data analogous to a pandas dataframe or an awkward record. You can see the columns using `my_tree.keys()`. We will typically extract the TTree data into an awkward array. You can get an awkward array with the data for a single column (also called a TBranch in root data) of a TTree with
+
+```py
+tree = root_file['tree']
+column_data = tree['columnname'].array()
+```
+
+You can get an awkward record with the arrays for many columns at once using
+
+```py
+event_data = tree.arrays(['column1','column2','column3'])
+```
+
+If you do not provide a list of columns, the `TTree.arrays` function will return a record with all columns, which can be quite large depending on the data set. You can also retrieve the data as a numpy array/dictionary of arrays or as a pandas series/dataframe using the optional argument `library='np'` or `library='pd'` for the `TBranch.array` and `TTree.arrays` functions.
+
+Once you have the data as an awkward array/record, you can easily inspect it in the usual way. For example, if your data has a column called `jet_pt`, you can inspect the `jet_pt` for the `n`th event using
+
+```py
+print(tree.jet_pt[n])
+```
+
+<!-- output -->
+
+## The structure of collider data and typical data analysis
+
+**TODO** More information on collider data.
+
+A typical workflow for data analysis involves reading the data, calculating new quantities, filtering the data, and producing a human-understandable output such as a histogram. The code below shows a simple example
+
+```py
+# get input
+dataset_file = ur.open('intro_tree.root')
+events = dataset_file['Events'].arrays()
+
+# calculate the number of electrons passing ID criteria
+events['n_good_el'] = ak.sum(events['Electron_mvaFall17V2Iso_WP90'], axis=-1)
+
+# make histogram of number of good electrons
+fig, axis = plt.subplots()
+hist = np.histogram(events.n_good_el,4,(-0.5,3.5))
+mh.histplot(*hist,
+    label=r'Mystery dataset',
+    ax=axis)
+axis.set_xlabel('# Electrons (WP90)')
+axis.set_ylabel('# Events')
+plt.savefig('plots/mystery_nel.pdf')
+```
+
+**TODO** More information on matplotlib and mplhep
+
+<!-- matplotlib/mplhep somewhere -->
