@@ -1,10 +1,20 @@
-$$\def\sb{\_}$$
-
 # Data analysis for particle physics
 
 This page is a tutorial on data analysis for particle ("high-energy") physics. It is a work-in-progress and thus may experience unexpected reorganization. 
 
 It is forseen that this tutorial will cover programming in Python; libraries for data science such as numpy, pandas, matplotlib, numba, pytorch, etc.; and some probability and statistics. All topics will be covered with applications to particle physics. Most of this content does not yet exist.
+
+1. [Programming in Python](#programming-in-python)
+  1.1. [Getting started] (#gettings-started-and-documentation-in-science)
+  1.2. [Expressions and variables] (#expressions-and-variables-in-python)
+  1.3. [Functions and control] (#functions-and-control-in-python)
+  1.4. [Classes and libraries] (#classes-and-libraries-in-python)
+2. [Data analysis libraries](#data-analysis-libraries)
+  2.1. [numpy and awkward](#getting-started-with-numpy-and-awkward)
+  2.2. [uproot](#reading-and-writing-data-with-uproot)
+  2.3. [Collider data analysis](#the-structure-of-collider-data-and-typical-data-analysis)
+  2.4. xgboost and pytorch
+3. Probability and statistics
 
 # Programming in Python
 
@@ -537,7 +547,7 @@ Much of the rest of this tutorial will focus on working with specific libraries 
 
 # Data analysis libraries
 
-## numpy and awkward: getting started
+## Getting started with numpy and awkward
 
 Interpreting python statements is actually rather slow, so we would like to manipulate large amounts of data with just a few commands. This is where the `numpy` and `awkward` libaries come in. These libraries allow us to do "vectorized" operations across large amounts of data in just one statement. Throughout this section, we will assume we have imported `numpy` and `awkward` as follows:
 
