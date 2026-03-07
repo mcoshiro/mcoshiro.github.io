@@ -5,11 +5,13 @@ This page is a tutorial on data analysis for particle ("high-energy") physics. I
 It is forseen that this tutorial will cover programming in Python; libraries for data science such as numpy, pandas, matplotlib, numba, pytorch, etc.; and some probability and statistics. All topics will be covered with applications to particle physics. Most of this content does not yet exist.
 
 1. [Programming in Python](#programming-in-python)
-    1.1. [Getting started] (#getting-started-and-documentation-in-science)
-    1.2. [Expressions and variables] (#expressions-and-variables-in-python)
-    1.3. [Functions and control] (#functions-and-control-in-python)
-    1.4. [Classes and libraries] (#classes-and-libraries-in-python)
+
+    1.1. [Getting started](#getting-started-and-documentation-in-science)
+    1.2. [Expressions and variables](#expressions-and-variables-in-python)
+    1.3. [Functions and control](#functions-and-control-in-python)
+    1.4. [Classes and libraries](#classes-and-libraries-in-python)
 2. [Data analysis libraries](#data-analysis-libraries)
+
     2.1. [numpy and awkward](#getting-started-with-numpy-and-awkward)
     2.2. [uproot](#reading-and-writing-data-with-uproot)
     2.3. [Collider data analysis](#the-structure-of-collider-data-and-typical-data-analysis)
