@@ -2,7 +2,7 @@
 
 This page is a tutorial on data analysis for particle ("high-energy") physics. It is a work-in-progress and thus may experience unexpected reorganization. 
 
-It is forseen that this tutorial will cover programming in Python; libraries for data science such as numpy, pandas, matplotlib, numba, pytorch, etc.; and some probability and statistics. All topics will be covered with applications to particle physics. Most of this content does not yet exist.
+It is forseen that this tutorial will cover programming in Python; libraries for data science such as numpy, matplotlib, numba, pytorch, etc.; and some probability and statistics. All topics will be covered with applications to particle physics. Most of this content does not yet exist.
 
 1. [Programming in Python](#programming-in-python)
 
@@ -13,16 +13,22 @@ It is forseen that this tutorial will cover programming in Python; libraries for
     1.3. [Functions and control](#functions-and-control-in-python)
 
     1.4. [Classes and libraries](#classes-and-libraries-in-python)
+
 2. [Data analysis libraries](#data-analysis-libraries)
 
     2.1. [numpy and awkward](#getting-started-with-numpy-and-awkward)
 
     2.2. [uproot](#reading-and-writing-data-with-uproot)
 
-    2.3. [Collider data analysis](#the-structure-of-collider-data-and-typical-data-analysis)
+    2.3. [Collider data](#the-structure-of-collider-data)
 
-    2.4. xgboost and pytorch
-3. Probability and statistics
+    2.4. [Analysis of collider data](#data-analysis-of-collider-data)
+
+    2.5. [Scaling up with coffea](#scaling-up-with-coffea)
+
+    2.5. [xgboost and pytorch](#machine-learning-with-xgboost-and-pytorch)
+
+3. [Probability and statistics](#probability-and-statistics)
 
 # Programming in Python
 
@@ -151,7 +157,7 @@ lhc_locations = {'ATLAS' : 1, 'ALICE' : 2, 'CMS' : 5, 'LHCb' : 8}
 print(lhc_locations['CMS'])
 ```
 
-Note that the indexing for lists starts from 0, so the 0th element of `my_list`  above is `1`. You can add a new element to the end of a list using `my_list.append(new_element)`, and you can add a new element to dictionary with `my_dictionary[new_key]=new_element`. There are many more functions for working with lists and dictionaries that you can find in the [relevant](https://docs.python.org/3/library/stdtypes.html#sequence-types-list-tuple-range) [documentation](https://docs.python.org/3/library/stdtypes.html#mapping-types-dict).
+Note that the indexing for lists starts from 0, so the 0th element of `my_list`  above is `1`. Using negative indices works backward from the end, with the -1st element of a list being the last one. You can add a new element to the end of a list using `my_list.append(new_element)`, and you can add a new element to dictionary with `my_dictionary[new_key]=new_element`. There are many more functions for working with lists and dictionaries that you can find in the [relevant](https://docs.python.org/3/library/stdtypes.html#sequence-types-list-tuple-range) [documentation](https://docs.python.org/3/library/stdtypes.html#mapping-types-dict).
 
 Finally, it is worth again emphasizing that keeping all your work organized and easily understandible is crucial for scientists. If you are using Jupyter, you can change the cell type from "Code" to "Markdown" or "Raw" to write down notes in [markdown](https://www.markdownguide.org/basic-syntax/) or plain text. If are not using Jupyter or you want to add comments directly into your code you can use a `#` to add a comment into your python code:
 
@@ -603,7 +609,7 @@ print(x[1:3, :])
 
 The range operator `:` has a default starting point of the first element (0) and a default ending point after the last element when not specified, meaning that `:` by itself with select all indices along a given axis.
 
-An important feature of numpy is **broadcasting** whereby a user can perform operations on two objects, even if they do not have the same shape (i.e. are not arrays of the same size). The most common usage of this is to broadcast a scalar value to an array. For example, the code below adds 2 to **each** component of the array `x`.
+An important feature of numpy is **broadcasting** whereby a user can perform operations on two objects, even if they do not have the same shape (i.e. are not arrays of the same size). The most common usage of this is to broadcast a scalar value to an array. For example, the code below adds 2 to *each* component of the array `x`.
 
 ```py
 x = x + 2
@@ -618,6 +624,8 @@ greater_than_four = x > 4
 
 x[greater_than_four] -= 2
 ```
+
+`numpy` functions like `np.sqrt()`, `np.absolute()`, etc. can be used to perform component-wise operations on `numpy` or `awkward` arrays.
 
 Awkward array or `awkward` serves as an extension to `numpy` for dealing with data that are not rectangular arrays. This is common in particle physics where the data might consist of a collection of particles for each "event", but the number of particles is different for each event.
 
@@ -664,8 +672,16 @@ You can also easily add new data to an existing record using the `[]` operator.
 electrons['quality'] = electron_quality
 ```
 
+There are several useful functions for working with `awkward` arrays. The `ak.sum()` function will replace a given dimension of an array with the sum over it's components. This is particularly useful when used with `axis=-1` (the default), which will sum over the inner most index. When provided booleans, sum will treat `True` as `1` and `False` as `0`. This allows one to count the number of elements meeting certain criteria. For example, if `electron_pt` is the transverse momenta of electrons (inner index) by event (outer index), we can get the number of electrons in each event with transverse momentum greater than 20 as an array with `ak.sum`.
+
+```py
+ak.sum(electron_pt > 20, axis=-1)
+```
+
 <!-- masking -->
 <!-- more on awkward -->
+
+You can find more information about `numpy` and `awkward` in their [respective](https://numpy.org/doc/stable/) [documentation](https://awkward-array.org/doc/main/index.html) pages.
 
 ## Reading and writing data with uproot
 
@@ -675,7 +691,7 @@ In this section we will assume you have imported the following libraries:
 import uproot as ur
 ```
 
-Most data in high energy physics is stored as "TTree" objects in **root** files. The uproot library provides a way to read and write ROOT files. You can open a file by using
+Most data in high energy physics is stored as "TTree" objects in **root** files. The `uproot` library provides a way to read and write ROOT files. You can open a file by using
 
 ```py
 root_file = ur.open(filename)
@@ -712,13 +728,59 @@ Once you have the data as an awkward array/record, you can easily inspect it in 
 print(tree.jet_pt[n])
 ```
 
-<!-- output -->
+<!-- output file.mktree('treename',tree)? -->
 
-## The structure of collider data and typical data analysis
+You can find more information about `uproot` on its [documentation page](https://uproot.readthedocs.io/en/latest/basic.html).
 
-**TODO** More information on collider data.
+## The structure of collider data 
 
-A typical workflow for data analysis involves reading the data, calculating new quantities, filtering the data, and producing a human-understandable output such as a histogram. The code below shows a simple example
+We will look at the data from general purpose collider experiments like ATLAS and CMS. In the future, this guide may be expanded with data from other types of experiments such as heavy flavor and neutrino experiments. You can find ATLAS and CMS open data at the [CERN open data portal](https://opendata.cern.ch/).
+
+Most analyses at experiments like CMS and ATLAS rely on **physics objects**, which serve as reconstructed proxies to high momentum fundamental particles. The correspondance is given in the following table.
+
+| Particle      | Physics object                  |
+|---------------|---------------------------------|
+| Electron      | Electron                        |
+| Muon          | Muon                            |
+| Tau           | Electron, Muon, or Hadronic tau |
+| Photon        | Photon                          |
+| Up quark      | Jet                             |
+| Down quark    | Jet                             |
+| Strange quark | Jet                             |
+| Charm quark   | (c) Jet                         |
+| Bottom quark  | (b) Jet                         |
+| Gluon         | Jet                             |
+| Neutrino      | Missing transverse moomentum    |
+| W Boson       | Combination of above            |
+| Z Boson       | Combination of above            |
+| Higgs Boson   | Combination of above            |
+| Top quark     | Combination of above            |
+
+Muons are relatively stable and simply pass through the detectors, leaving tracks that can be reconstructed as a muon physics object. Electrons are similarly stable, though they more commonly radiate away some of their energy as photons when passing through matter due to a process called bremsstrahlung. Photons are also relatively stable, but have some probability to convert into electron pairs. As a result, electron and photon physics objects are reconstructed as clusters of detected electrons and photons.
+
+Taus are relatively unstable and quickly decay in one of three ways: into a pair of neutrinos and an electron (about 1/6 probability), a pair of neutrinos and a muon (about 1/6 probability), or a neutrino and a small collection of hadrons (composite particles) (about 2/3 probability). As neutrinos are not detected in these experiments, the first two cases result in the tau appearing as an electron or muon physics object. In the last case, the detected hadrons can be reconstructed a "hadronic tau".
+
+The particles that interact through the strong interaction are called quarks and gluons. Due to the strong interaction, a high-energy quark or gluon will typically radiate away much of its energy as additional quarks and gluons after being produced. This cluster of quarks and gluons will then form composite particles, hadrons, and the resulting cluster of hadrons (and hadron decay products) is called a QCD jet. Reconstructed jets are thus used as a proxy to a high-energy quark or gluon, excluding the top quark, which decays before it is able to form a coherent jet. The jets from different flavors of quarks and gluons are typically hard to discriminate (it is tricky to even rigorously define jet flavor). However, jets from bottom quarks, and to a lesser extent charm quarks, can be discriminated from other jets. Jets from bottom and charm quarks are called b jets and c jets respectively.
+
+Though neutrinos are not visible to the detectors employed in these experiments, the presence of neutrinos can be inferred using conservation of momentum. In general, we do not know the energy/momentum of the colliding quarks/gluons inside of the proton since the proton's energy/momentum will be randomly divided amongst its constituents. However, we do know that the collisions are roughly head-on, meaning that the momentum of the colliding particles is roughly 0 in the plane transverse to the collision. Based on the particles detected emerging from the collision, we can thus use conservation of momentum to calculate the missing transverse momentum ($p\_\mathrm{T}^\mathrm{miss}$), which can be attributed to particles that are not detected such as neutrinos. Small amounts of missing transverse momentum will be generated by mismeasurement, but large missing transverse momentum is typically indicative of neutrino production.
+
+Finally, the W boson, Z boson, Higgs boson, and top quark have very short lifetimes ($< 10^{-20}$ s) and are typically reconstructed via their decays into some combination of the physics objects above. W bosons have about a 2/3 probability to decay into two quarks, generating two jets, and about a 1/3 probability of decaying into a charged lepton (electron, muon, or tau) plus a neutrino. Z bosons decays into a pair of quarks with about a 70% probability, into a pair of neutrinos with about a 20% probabiliyt, and into a pair of charged leptons with about a 10% probability. Top quarks almost always decay into a bottom quark and a W boson. Finally, the Higgs boson has a rather complicated set of [decay channels](https://pdg.lbl.gov/2025/reviews/rpp2025-rev-higgs-boson.pdf), with five having been observed so far: two photons (0.2%), two Z bosons (2.6%), two W bosons (21%), two taus (6.3%), and two bottom quarks (58%). Simulated samples are often divided based on the heavy particles (W, Z, top, and Higgs) in the process; hard scattering processes without heavy particles are dominated by events with high-energy quarks and gluons and are "QCD multijet". The vast majority of proton-proton collisions do not involve any hard scattering and are sometimes called "minimum bias" events.
+
+As a final note, particle physicists often do not distinguish between particles and antiparticles, so an "electron" really means an electron or an antielectron. At the analysis level, one might requires one to have negative charge and the other to have positive charge, but both particles are referred to as "electrons" in practice.
+
+## Data analysis of collider data
+
+In this section we will assume you have imported the following libraries
+
+```py
+import awkward as ak
+improt matplotlib.pyplot as plt
+import mplhep as mh
+import numpy as np
+import uproot as ur
+```
+
+A typical data analysis workflow involves reading the data, calculating new quantities, filtering the data, and producing a human-understandable output such as a (table) numbers or histograms. The code below shows a simple example:
 
 ```py
 # get input
@@ -732,13 +794,39 @@ events['n_good_el'] = ak.sum(events['Electron_mvaFall17V2Iso_WP90'], axis=-1)
 fig, axis = plt.subplots()
 hist = np.histogram(events.n_good_el,4,(-0.5,3.5))
 mh.histplot(*hist,
-    label=r'Mystery dataset',
+    label='Mystery dataset',
     ax=axis)
 axis.set_xlabel('# Electrons (WP90)')
 axis.set_ylabel('# Events')
 plt.savefig('plots/mystery_nel.pdf')
 ```
 
+Histograms are ubiquitous in high-energy physics since they are a basic representation of the data projected onto one dimension that can easily be compared with appropriate probability densities (see section on probability). You can reduce a set of data into a histogram using the `np.histogram` function:
+
+`hist = np.histogram(data, nbins, (lower_bound, upper_bound))`
+
+You can then plot this histogram using the `matplotlib` library. We will use the `mplhep` library as a wrapper around `matplotlib`. Using `mplhep`, we can plot a histogram `hist` with just a few lines, as in the previous example.
+
+```py
+fig, axis = plt.subplots()
+mh.histplot(*hist,
+    label='Mystery dataset',
+    ax=axis)
+axis.set_xlabel('# Electrons (WP90)')
+axis.set_ylabel('# Events')
+plt.savefig('plots/mystery_nel.pdf')
+```
+
+You can plot multiple plots on the same axis by simply making multiple calls to `mh.histplot`.
+
 **TODO** More information on matplotlib and mplhep
 
+You can find more information about `matplotlib` and `mplhep` in their [respective](https://matplotlib.org/stable/api/pyplot_summary.html) [documentation](https://mplhep.readthedocs.io/en/latest/) pages.
+
 <!-- matplotlib/mplhep somewhere -->
+
+## Scaling up with coffea
+
+## Machine learning with xgboost and pytorch
+
+# Probability and statistics
