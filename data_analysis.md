@@ -1,8 +1,9 @@
+
 # Data analysis for particle physics
 
 This page is a tutorial on data analysis for particle ("high-energy") physics. It is a work-in-progress and thus may experience unexpected reorganization. 
 
-It is forseen that this tutorial will cover programming in Python; libraries for data science such as numpy, matplotlib, numba, pytorch, etc.; and some probability and statistics. All topics will be covered with applications to particle physics. Most of this content does not yet exist.
+It is forseen that this tutorial will cover programming in Python; libraries for data science such as numpy, matplotlib, numba, pytorch, etc.; and some probability and statistics. All topics will be covered with applications to particle physics. Much of this content does not yet exist.
 
 1. [Programming in Python](#programming-in-python)
 
@@ -18,15 +19,23 @@ It is forseen that this tutorial will cover programming in Python; libraries for
 
     2.1. [numpy and awkward](#getting-started-with-numpy-and-awkward)
 
-    2.2. [uproot](#reading-and-writing-data-with-uproot)
+    2.2. [Indexing in awkward](#indexing-and-manipulation-with-awkward)
 
-    2.3. [Collider data](#the-structure-of-collider-data)
+    2.3. [vector](#physics-vectors-with-vector)
 
-    2.4. [Analysis of collider data](#data-analysis-of-collider-data)
+    2.4. [numba](#numba-and-compiled-code)
 
-    2.5. [Scaling up with coffea](#scaling-up-with-coffea)
+    2.5. [Data visualization](#data-visualization-with-matplotlib-and-mplhep)
 
-    2.5. [xgboost and pytorch](#machine-learning-with-xgboost-and-pytorch)
+    2.6. [uproot](#reading-and-writing-data-with-uproot)
+
+    2.7. [Collider data](#the-structure-of-collider-data)
+
+    2.8. [Analysis of collider data](#data-analysis-of-collider-data)
+
+    2.9. [Scaling up with coffea](#scaling-up-with-coffea)
+
+    2.10. [xgboost and pytorch](#machine-learning-with-xgboost-and-pytorch)
 
 3. [Probability and statistics](#probability-and-statistics)
 
@@ -590,7 +599,7 @@ for x, y in zip(x_list, y_list):
   z_list.append(x*y)
 ```
 
-As demonstrated above, "vectorized" here does not mean in the math sense of the word vector. Rather, operations like `+`, `-`, `*`, `/`, `==`, `<`, and so forth are performed component-wise for each component in the array. Due to limitations in Python, boolean operators like `and`, `or`, and `not` can't be used, though for *booleans* specifically, you can use their bitwise versions `&`, `|`, and `~`.
+As demonstrated above, "vectorized" here does not mean in the math sense of the word vector. Rather, operations like `+`, `-`, `*`, `/`, `==`, `<`, and so forth are performed component-wise for each component in the array. Due to limitations in Python, boolean operators like `and`, `or`, and `not` can't be used, though for *booleans* specifically, you can use their bitwise versions `&`, `|`, and `~`, though you should be careful with order of operations with these operators.
 
 Arrays in numpy can have any number of dimentions. You can access a component of a numpy array using the `[]` operator.
 
@@ -615,7 +624,7 @@ An important feature of numpy is **broadcasting** whereby a user can perform ope
 x = x + 2
 ```
 
-Broadcasting is frequently combined with boolean indexing. If `x` is an array and `y` is a boolean array of the same shape, then `x[y]` refers to the components of `x` for which `y` is true. As an example, the following code subtracts 2 from all components of an array `x` that are greater than 4.
+Broadcasting is frequently combined with boolean indexing, which will be explained further in the next section. If `x` is an array and `y` is a boolean array of the same shape, then `x[y]` refers to the components of `x` for which `y` is true. As an example, the following code subtracts 2 from all components of an array `x` that are greater than 4.
 
 ```py
 # create boolean array with broadcasting
@@ -672,16 +681,273 @@ You can also easily add new data to an existing record using the `[]` operator.
 electrons['quality'] = electron_quality
 ```
 
-There are several useful functions for working with `awkward` arrays. The `ak.sum()` function will replace a given dimension of an array with the sum over it's components. This is particularly useful when used with `axis=-1` (the default), which will sum over the inner most index. When provided booleans, sum will treat `True` as `1` and `False` as `0`. This allows one to count the number of elements meeting certain criteria. For example, if `electron_pt` is the transverse momenta of electrons (inner index) by event (outer index), we can get the number of electrons in each event with transverse momentum greater than 20 as an array with `ak.sum`.
+There are several useful functions for working with `awkward` arrays. The `ak.sum()` function will replace a given dimension of an array with the sum over it's components. This is particularly useful when used with `axis=-1`. When provided booleans, sum will treat `True` as `1` and `False` as `0`. This allows one to count the number of elements meeting certain criteria. For example, if `electron_pt` is the transverse momenta of electrons (inner index) by event (outer index), we can get the number of electrons in each event with transverse momentum greater than 20 as an array with `ak.sum`.
 
 ```py
 ak.sum(electron_pt > 20, axis=-1)
 ```
 
+Functions that work analogously to `ak.sum` include `ak.prod`, `ak.min`, `ak.max`, `ak.argmin`, `ak.argmax`, `ak.count`, `ak.mean`, `ak.var`, and `ak.std`. A common `numpy` function used for both `numpy` and `awkward` arrays is `np.where`, which is effectively an if statment.
+
+```py
+lead_lepton_pt = np.where(lead_electron_pt > lead_muon_pt, 
+                          lead_electron_pt, 
+                          lead_muon_pt)
+```
+
+You will also commonly need to generate new `numpy` and `awkward` arrays. A particularly common way to initialize them is with the `zeros_like`, `ones_like`, and `full_like` methods, which generate a new array with the same shape as an existing one but filled with all zeros, ones, or a fixed value respectively.
+
+```py
+# suppose we have an awkward array Muon_pt
+# if we want to generate an array Muon_mass of matching size, we can use 
+# full_like since the muon mass is a constant (0.106 GeV)
+
+Muon_mass = ak.full_like(Muon_pt, 0.106)
+```
+
 <!-- masking -->
 <!-- more on awkward -->
+<!-- awkward indexing, combinatorics -->
 
 You can find more information about `numpy` and `awkward` in their [respective](https://numpy.org/doc/stable/) [documentation](https://awkward-array.org/doc/main/index.html) pages.
+
+## Indexing and manipulation with awkward
+
+As in the previous section, we will assume we have imported `numpy` and `awkward`.
+
+```py
+import numpy as np
+import awkward as ak
+```
+
+We have already seen how we can use boolean indexing to filter data. For example, if `events` is an `awkward` record, we can select only events with two electrons with pt greater than 20 using
+
+```py
+events_filtered = events[events.Electron_pt > 20]
+```
+
+Another common indexing trick is using arrays of integer indices. Indexing an awkward array with an array of integer indexes will produce an array the same shape as the indexing array, but with the values replaced by those in the array being indexed. This is perhaps best demonstrated via example.
+
+```py
+Electron_pt = ak.Array([[30.2, 21.4, 33.3], [42.0, 87.0], [58.3, 83.2]])
+Electron_indexes = ak.Array([[0, 2, 2, 2, 1], [1], [1, 1, 0]])
+Indexed_Electron_pt = Electron_pt[Electron_indexes]
+# = [[30.2, 33.3, 33.3, 33.3, 21.4], [87.0], [83.2, 83.2, 58.3]]
+```
+
+This can be used, for example, to get the value of one awkward array corresponding to the maximum/minimum number in another array, or to sort an array by another.
+
+```py
+# suppose we have awkward arrays Photon_pt and Photon_eta
+
+highest_pt_photon_index = ak.argmax(Photon_pt)
+eta_of_highest_pt_photon = Photon_eta[highest_pt_photon_index]
+
+photon_indexes_sorted_by_pt = ak.argsort(Photon_pt)
+photon_eta_sorted_by_pt = Photon_eta[photon_indexes_sorted_by_pt]
+```
+
+Working with indexes will frequently expose you to cases where one has to deal with missing data, represented in awkward arrays as `None`. To set values to `None`, you can use `ak.mask`.
+
+```py
+# Suppose Photon_electronIdx encodes the index of an electron if an object is
+# reconstructed as both a photon and an electron, but is -1 to denote that
+# there is no equivalent electron object. We can mask the -1 values to None
+
+Photon_electronIdx_masked = ak.mask(events.Photon_electronIdx,
+      events.Photon_electronIdx != -1)
+```
+
+To do the reverse and replace `None` with a specified value, you can use `ak.fill_none`.
+
+```py
+Photon_isSignalElectron = ak.fill_none(Electron_sig[Photon_electronIdx_masked],
+                                       False)
+```
+
+If you wanted to get the second value of each sub-array, but you are not sure if all subarrays have at least 2 values, you can use `ak.pad_none` to add `None` to all subarrays until they have at least two values.
+
+```py
+# suppose we want to get the second highest pT electron for each event
+# or 0 for events without at least two electrons
+
+sorted_Electron_pt = ak.sort(Electron_pt, axis=-1, ascending=False)
+sorted_Electron_pt = ak.pad_none(Electron_pt, 2)
+second_highest_Electron_pt = ak.fill_none(sorted_Electron_pt[:, 1], 0.0)
+```
+
+## Physics vectors with vector
+
+For this section we will assume we have imported
+
+```py
+import awkward as ak
+import vector
+```
+
+It is very common for physics calculations to involve four-vectors, paritcularly the four-momentum vector $(E, p\_{x}, p\_{y}, p\_{z})$. In previous exercises, you have seen that there are many different ways to fully specify the four-momentum, with the most common version used in hadron collider experiments being in terms of transverse momentum $p\_\mathrm{T}$, pseudorapidity $\eta$, azimuthal angle $\phi$, and mass $m$.
+
+One particularly common calculation is finding the **invariant mass** of a set of particles. You know that the mass of a particle is related to its energy and momentum via the equation $E^2=|\vec{p}|^2+m^2$ in natural units. Suppose we have a Higgs boson that decays into a pair of photons. Since energy and momentum are conserved, if we know the energy and momentum of the photons, we can simply sum them to get the energy and momentum of the Higgs boson candidate, from which we can calculate its mass. In an actual experiment the same relation is also used to calculate the momentum of the muons since it is actually the energy/direction that is measured (and the mass is known to be zero). The invariant mass of a set of particles is thus the answer to the question "*if* these particles came from the decay of another particle, what was the mass of that particle". In real data, events with pairs of photons will sometimes be from a Higgs decay, but the vast majority of the time will be not be from the decay of any heavy particle. If you were to plot the distribution of invariant mass, you would find a smooth distribution from "nonresonant" diphoton events, with the Higgs boson appearing as an excess of diphoton events with an invariant mass at 125 GeV, the Higgs boson mass, as can be seen [here](https://cms-results.web.cern.ch/cms-results/public-results/publications/HIG-19-015/CMS-HIG-19-015_Figure_014.pdf).
+
+The python `vector` library ([documentation](https://vector.readthedocs.io/en/latest/)) provides methods for working with four-vectors that make it easy to work with them without having to implement everything yourself. As you saw in a previous example, we can use the following code to calculate the invariant mass of two muons
+
+```py
+mu1_p = vector.obj(pt = Muon_pt[ievt][imu1],
+                   eta = Muon_eta[ievt][imu1],
+                   phi = Muon_phi[ievt][imu1],
+                   m = 0.106)
+mu2_p = vector.obj(pt = Muon_pt[ievt][imu2],
+                   eta = Muon_eta[ievt][imu2],
+                   phi = Muon_phi[ievt][imu2],
+                   m = 0.106)
+ll_p = mu1_p + mu2_p
+ll_mass = (mu1_p+mu2_p).mass
+```
+
+You can similarly use `vector.obj` to initialize a vector with `E`, `px`, `py`, and `pz` coordinates. You can then read any of these properties out to easily convert between coordinate systems.
+
+You can use `vector` together with awkward arrays by running the command
+
+```py
+vector.register_awkward()
+```
+
+at the beginning of your notebook/processing script. You can use vector operations on awkward arrays of vectors, which can be constructed using `ak.zip` together with the argument `with_name='Momentum4D'` as shown in the following example.
+
+```py
+# assume we have awkward/numpy arrays Muon*_pt, Muon*_eta, Muon*_phi
+
+# we make awkward arrays of four-vectors
+Muon1_p4 = ak.zip({'pt' : Muon1_pt,
+                   'eta' : Muon1_eta,
+                   'phi' : Muon1_phi,
+                   'm' : ak.full_like(Muon1_pt, 0.106),
+                   with_name='Momentum4D')
+Muon2_p4 = ak.zip({'pt' : Muon2_pt,
+                   'eta' : Muon2_eta,
+                   'phi' : Muon2_phi,
+                   'm' : ak.full_like(Muon2_pt, 0.106),
+                   with_name='Momentum4D')
+Dimuon_p4 = Muon1_p4+Muon2_p4
+
+# and calculate and awkward array of invariant mass values
+Dimuon_mass = Dimuon_p4.mass
+```
+
+For most purposes, this will be sufficient, however, for some purposes (such as writing data to a file), the type after vector calculations will need to be expressly specified.
+
+```py
+# force output to be a float
+Dimuon_mass = ak.enforce_type(Dimuon_p4.mass, 'float32')
+```
+
+## Numba and compiled code
+
+Sometimes, you will need to perform operations that are too complex to easily describe using numba and awkward's built-in functions. A common case of this is combinatoric matching, which is possible in [simple cases](https://awkward-array.org/doc/main/user-guide/how-to-combinatorics-best-match.html), but quickly becomes cumbersome as the matching procedure gets more complicated. In this case, you can use a manual loop, but because interpreted python is very slow, you will want to compile the loop code. This can be done with the `numba` library by using the `@nb.njit` decorator before the function. The following function shows an example that finds a Z boson candidate from awkward arrays of electrons and muons properties.
+
+```py
+Z_MASS = 91.1876
+
+@nb.njit
+def get_Dilepton(Electron_charge: ak.Array, Electron_pt: ak.Array,
+                 Electron_eta: ak.Array, Electron_phi: ak.Array,
+                 Muon_charge: ak.Array, Muon_pt: ak.Array,
+                 Muon_eta: ak.Array, Muon_phi: ak.Array
+                 ) -> tuple[np.array, np.array, np.array, np.array]:
+  """Finds electron-antielectron or muon-antimuon pair with mass closest to
+  Z_MASS for each event as a Z boson candidate and returns the properties of
+  said candidate
+  """
+  Dilepton_pt = np.zeros(len(Electron_charge), dtype=np.float32)
+  Dilepton_eta = np.zeros(len(Electron_charge), dtype=np.float32)
+  Dilepton_phi = np.zeros(len(Electron_charge), dtype=np.float32)
+  Dilepton_m = np.zeros(len(Electron_charge), dtype=np.float32)
+  for ievt in range(len(Electron_pt)):
+    for iel1 in range(len(Electron_pt[ievt])):
+      for iel2 in range(iel1+1, len(Electron_pt[ievt])):
+        if (Electron_charge[ievt][iel1]
+            + Electron_charge[ievt][iel2])==0:
+          el1_p = vector.obj(pt = Electron_pt[ievt][iel1],
+                             eta = Electron_eta[ievt][iel1],
+                             phi = Electron_phi[ievt][iel1],
+                             m = 0.000511)
+          el2_p = vector.obj(pt = Electron_pt[ievt][iel2],
+                             eta = Electron_eta[ievt][iel2],
+                             phi = Electron_phi[ievt][iel2],
+                             m = 0.000511)
+          ll_p = el1_p + el2_p
+          if abs(ll_p.mass-Z_MASS) < abs(Dilepton_m[ievt]-Z_MASS):
+            Dilepton_pt[ievt] = ll_p.pt
+            Dilepton_eta[ievt] = ll_p.eta
+            Dilepton_phi[ievt] = ll_p.phi
+            Dilepton_m[ievt] = ll_p.mass
+    for imu1 in range(len(Muon_pt[ievt])):
+      for imu2 in range(imu1+1, len(Muon_pt[ievt])):
+        if (Muon_charge[ievt][imu1]
+            + Muon_charge[ievt][imu2])==0:
+          mu1_p = vector.obj(pt = Muon_pt[ievt][imu1],
+                             eta = Muon_eta[ievt][imu1],
+                             phi = Muon_phi[ievt][imu1],
+                             m = 0.106)
+          mu2_p = vector.obj(pt = Muon_pt[ievt][imu2],
+                             eta = Muon_eta[ievt][imu2],
+                             phi = Muon_phi[ievt][imu2],
+                             m = 0.106)
+          ll_p = mu1_p + mu2_p
+          if abs(ll_p.mass-Z_MASS) < abs(Dilepton_m[ievt]-Z_MASS):
+            Dilepton_pt[ievt] = ll_p.pt
+            Dilepton_eta[ievt] = ll_p.eta
+            Dilepton_phi[ievt] = ll_p.phi
+            Dilepton_m[ievt] = ll_p.mass
+  return Dilepton_pt, Dilepton_eta, Dilepton_phi, Dilepton_m
+```
+
+Note that within `nb.njit`-compiled code, certain functionalities are unavailable. Most notably, although you can pass awkward arrays as arguments and work with them, you cannot use any `ak` functions. If you need to generate a new awkward array, you must use `ak.ArrayBuiler` by initializing a builder outside of the function, passing it in, then calling its `snapshot` method. You can find the ArrayBuilder documentation [here](https://awkward-array.org/doc/main/reference/generated/ak.ArrayBuilder.html#ak.ArrayBuilder).
+
+```py
+@nb.njit
+def get_Electron_mvacuts(Electron_pt, Electron_eta, Electron_mvacuts_builder):
+  for ievt in range(len(Electron_pt)):
+    Electron_mvacuts_builder.begin_list()
+    for iel in range(len(Electron_pt[ievt])):
+      mvacut = 0
+      if (Electron_pt[ievt][iel] < 10.0
+          and abs(Electron_eta[ievt][iel]) < 0.8):
+        mvacut = 0.92661497
+      elif (Electron_pt[ievt][iel] < 10.0
+            and abs(Electron_eta[ievt][iel]) < 1.479):
+        mvacut = 0.91376898
+      elif (Electron_pt[ievt][iel] < 10.0):
+        mvacut = 0.96821225
+      elif (abs(Electron_eta[ievt][iel]) < 0.8):
+        mvacut = 0.35267898
+      elif (abs(Electron_eta[ievt][iel]) < 1.479):
+        mvacut = 0.26008539
+      else:
+        mvacut = -0.4963113
+      Electron_mvacuts_builder.real(mvacut)
+    Electron_mvacuts_builder.end_list()
+  return Electron_mvacuts_builder
+
+# ...do some processing...
+# assume we have Electron_pt and Electron_eta awkward arrays of the same shape
+
+Electron_mvacuts_builder = ak.ArrayBuilder()
+get_Electron_mvacuts(Electron_pt, Electron_eta, 
+                     Electron_mvacuts_builder)
+Electron_mvacuts = Electron_mvacuts_builder.snapshot()
+```
+
+Note that sometimes, such as when reading data from a file (described in more detail below), awkward will only initialize arrays on-demand. Since arrays must be initialized before providing them to a `numba`-compiled function, one should use the `ak.materialize` function.
+
+```py
+# suppose we read the data from a file into an awkward record "events". To use
+# an array "Electron_charge" in a numba-compiled function, we need to 
+# materialize it first
+ak.materialize(events.Electron_charge)
+```
+
+## Data visualization with matplotlib and mplhep
 
 ## Reading and writing data with uproot
 
@@ -728,7 +994,12 @@ Once you have the data as an awkward array/record, you can easily inspect it in 
 print(tree.jet_pt[n])
 ```
 
-<!-- output file.mktree('treename',tree)? -->
+In particle physics, we often work with very large data sets, which contain a lot of information in order to be useful for people doing many different type of data analyses. For a given analysis, it is common to only need a small subset of the data, hence one typically creates reduced data sets by removing rows/events (skimming), removing columns (slimming), or removing particles that are not interesting in a given row/column (thinning). This can be done with the various awkward filtering mechanisms mentioned above. To save the reduced data set to a root file, one can use the `uproot`'s `mktree` method, which takes a name for the tree together with a dictionary of (awkward) arrays that comprise the column data.
+
+```py
+with ur.recreate(filename) as output_file:
+  output_file.mktree('tree', {'column1' : column1_data, 'column2' : column2_data})
+```
 
 You can find more information about `uproot` on its [documentation page](https://uproot.readthedocs.io/en/latest/basic.html).
 
@@ -764,7 +1035,7 @@ The particles that interact through the strong interaction are called quarks and
 
 Though neutrinos are not visible to the detectors employed in these experiments, the presence of neutrinos can be inferred using conservation of momentum. In general, we do not know the energy/momentum of the colliding quarks/gluons inside of the proton since the proton's energy/momentum will be randomly divided amongst its constituents. However, we do know that the collisions are roughly head-on, meaning that the momentum of the colliding particles is roughly 0 in the plane transverse to the collision. Based on the particles detected emerging from the collision, we can thus use conservation of momentum to calculate the missing transverse momentum ($p\_\mathrm{T}^\mathrm{miss}$), which can be attributed to particles that are not detected such as neutrinos. Small amounts of missing transverse momentum will be generated by mismeasurement, but large missing transverse momentum is typically indicative of neutrino production.
 
-Finally, the W boson, Z boson, Higgs boson, and top quark have very short lifetimes ($< 10^{-20}$ s) and are typically reconstructed via their decays into some combination of the physics objects above. W bosons have about a 2/3 probability to decay into two quarks, generating two jets, and about a 1/3 probability of decaying into a charged lepton (electron, muon, or tau) plus a neutrino. Z bosons decays into a pair of quarks with about a 70% probability, into a pair of neutrinos with about a 20% probabiliyt, and into a pair of charged leptons with about a 10% probability. Top quarks almost always decay into a bottom quark and a W boson. Finally, the Higgs boson has a rather complicated set of [decay channels](https://pdg.lbl.gov/2025/reviews/rpp2025-rev-higgs-boson.pdf), with five having been observed so far: two photons (0.2%), two Z bosons (2.6%), two W bosons (21%), two taus (6.3%), and two bottom quarks (58%). Simulated samples are often divided based on the heavy particles (W, Z, top, and Higgs) in the process; hard scattering processes without heavy particles are dominated by events with high-energy quarks and gluons and are "QCD multijet". The vast majority of proton-proton collisions do not involve any hard scattering and are sometimes called "minimum bias" events.
+Finally, the W boson, Z boson, Higgs boson, and top quark have very short lifetimes ($< 10^{-20}$ s) and are typically reconstructed via their decays into some combination of the physics objects above. W bosons have about a 2/3 probability to decay into two quarks, generating two jets, and about a 1/3 probability of decaying into a charged lepton (electron, muon, or tau) plus a neutrino. Z bosons decays into a pair of quarks with about a 70% probability, into a pair of neutrinos with about a 20% probability, and into a pair of charged leptons with about a 10% probability. Top quarks almost always decay into a bottom quark and a W boson. Finally, the Higgs boson has a rather complicated set of [decay channels](https://pdg.lbl.gov/2025/reviews/rpp2025-rev-higgs-boson.pdf), with five having been observed so far: two photons (0.2%), two Z bosons (2.6%), two W bosons (21%), two taus (6.3%), and two bottom quarks (58%). Simulated samples are often divided based on the heavy particles (W, Z, top, and Higgs) in the process; hard scattering processes without heavy particles are dominated by events with high-energy quarks and gluons and are "QCD multijet". The vast majority of proton-proton collisions do not involve any hard scattering and are sometimes called "minimum bias" events.
 
 As a final note, particle physicists often do not distinguish between particles and antiparticles, so an "electron" really means an electron or an antielectron. At the analysis level, one might requires one to have negative charge and the other to have positive charge, but both particles are referred to as "electrons" in practice.
 
