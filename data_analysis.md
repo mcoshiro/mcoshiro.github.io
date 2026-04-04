@@ -21,23 +21,29 @@ It is forseen that this tutorial will cover programming in Python; libraries for
 
     2.2. [Indexing in awkward](#indexing-and-manipulation-with-awkward)
 
-    2.3. [vector](#physics-vectors-with-vector)
+    2.3. [pandas and awkward records](#pandas-and-awkward-records)
 
-    2.4. [numba](#numba-and-compiled-code)
+    2.4. [vector](#physics-vectors-with-vector)
 
-    2.5. [Data visualization](#data-visualization-with-matplotlib-and-mplhep)
+    2.5. [numba](#numba-and-compiled-code)
 
-    2.6. [uproot](#reading-and-writing-data-with-uproot)
+    2.6. [Data visualization](#histograms-and-data-visualization-with-hist-matplolib-and-mplhep)
 
-    2.7. [Collider data](#the-structure-of-collider-data)
+    2.7. [uproot](#reading-and-writing-data-with-uproot)
 
-    2.8. [Analysis of collider data](#data-analysis-of-collider-data)
+    2.8. [Collider data](#the-structure-of-collider-data)
 
-    2.9. [Scaling up with coffea](#scaling-up-with-coffea)
+    2.9. [Analysis of collider data](#data-analysis-of-collider-data)
 
-    2.10. [xgboost and pytorch](#machine-learning-with-xgboost-and-pytorch)
+    2.10. [Scaling up with coffea](#scaling-up-with-coffea)
+
+    2.11. [Machine learning](#machine-learning-with-xgboost-and-pytorch)
 
 3. [Probability and statistics](#probability-and-statistics)
+
+    3.1. [Concepts of probability and statistics](#concepts-of-probability-and-statistics)
+
+    3.2. [Statistical models and fitting](#statistical-models-and-fitting)
 
 # Programming in Python
 
@@ -149,12 +155,12 @@ Some other basic operations that are useful for comparisons are listed below
 | `a > b`   | any         | bool        | `a` is greater than `b`             |
 | `a >= b`  | any         | bool        | `a` is greater than or equal to `b` |
 | `a != b`  | any         | bool        | `a` is not equal to `b`             |
-| not a     | bool        | bool        | inverts true and false              |
-| a or b    | bool, bool  | bool        | true iff `a` or `b` is true         |
-| a and b   | bool, bool  | bool        | true iff `a` and `b` are true       |
-| a & b     | int, int    | int         | bitwise and                         |
-| a | b     | int, int    | int         | bitwise or                          |
-| ~ a       | int         | int         | bitwise not                         |
+| `not a`   | bool        | bool        | inverts true and false              |
+| `a or b`  | bool, bool  | bool        | true iff `a` or `b` is true         |
+| `a and b` | bool, bool  | bool        | true iff `a` and `b` are true       |
+| `a & b`   | int, int    | int         | bitwise and                         |
+| `a | b`   | int, int    | int         | bitwise or                          |
+| `~ a`     | int         | int         | bitwise not                         |
 
 Lists and dictionaries can consist of multiple values, which are accessed using the `[]` operator.
 
@@ -545,7 +551,7 @@ x.get_energy()
 While implementing functionality from the ground up is useful for learning, in practice, most programming uses **libraries**, collection of useful elements like functions and classes that have already been written. You have already seen us use Python's `math` library to get access to functions like `log`, `sqrt`, etc. In python, libraries can be imported using an import statement
 
 ```py
-import numpy
+import math
 ```
 
 You can also define a shorthand name for the library
@@ -572,14 +578,22 @@ Much of the rest of this tutorial will focus on working with specific libraries 
 
 ## Getting started with numpy and awkward
 
-Interpreting python statements is actually rather slow, so we would like to manipulate large amounts of data with just a few commands. This is where the `numpy` and `awkward` libaries come in. These libraries allow us to do "vectorized" operations across large amounts of data in just one statement. Throughout this section, we will assume we have imported `numpy` and `awkward` as follows:
+<!--Content:-->
+<!--Intro to numpy arrays and vector operations/functions-->
+<!--Components and shape -->
+<!--Reduction functions -->
+<!--Broadcasting -->
+<!--Intro to awkward arrays -->
+<!--Creating arrays -->
+
+Interpreting python statements is actually very slow, so to analyze large amounts of data, we will need to have more efficient ways to perform manipulations. This is where the `numpy` and `awkward` libaries come in. These libraries allow us to do "vectorized" operations across large amounts of data in just one statement. Throughout this section, we will assume we have imported `numpy` and `awkward` as follows:
 
 ```py
 import numpy as np
 import awkward as ak
 ```
 
-The basic class introduced by numpy is the `np.ndarray` (alias `np.array`). This acts similarly to a Python list, except that the data must all be the same type, i.e. `[3.0, 'Hello']` is a valid Python list, but `np.array([3.0, 'Hello'])` will throw an error. The advantage of numpy lists is that operations are "vectorized" so
+The basic class introduced by numpy is the `np.ndarray` (alias `np.array`). This acts similarly to a Python list, except that the data must all be the same type, i.e. `[3.0, 'Hello']` is a valid Python list, but `np.array([3.0, 'Hello'])` will throw an error. The advantage of numpy lists is that we can perform operations on all the components of a numpy array at the same time, so
 
 ```py
 x_array = np.array([3.0, 7.2, 2.3, 8.4, 9.7, 4.1])
@@ -599,7 +613,20 @@ for x, y in zip(x_list, y_list):
   z_list.append(x*y)
 ```
 
-As demonstrated above, "vectorized" here does not mean in the math sense of the word vector. Rather, operations like `+`, `-`, `*`, `/`, `==`, `<`, and so forth are performed component-wise for each component in the array. Due to limitations in Python, boolean operators like `and`, `or`, and `not` can't be used, though for *booleans* specifically, you can use their bitwise versions `&`, `|`, and `~`, though you should be careful with order of operations with these operators.
+It is said that numpy operations are "vectorized", not in the math/physics sense of the word vector, but in the sense that operations like `+`, `-`, `*`, `/`, `==`, `<`, and so forth are performed component-wise for each component in the array. Due to limitations in Python, boolean operators like `and`, `or`, and `not` can't be used, though for *booleans* specifically, you can use their bitwise versions `&`, `|`, and `~` (though you should be careful with order of operations with these operators, they are high priority than comparisons like `==` or `>`). `numpy` functions like `np.sqrt()`, `np.absolute()`, etc. can be used to perform component-wise operations on `numpy` or `awkward` arrays. 
+
+```py
+#each component of b is sqrt of the corresponding component of a
+b = np.sqrt(a)
+```
+
+You can find a list of the numeric functions in the [documentation](https://numpy.org/doc/stable/reference/routines.math.html) and other functions in the associated documentation pages. One other common `numpy` function is `np.where`, which is effectively an if statment.
+
+```py
+lead_lepton_pt = np.where(lead_electron_pt > lead_muon_pt, 
+                          lead_electron_pt, 
+                          lead_muon_pt)
+```
 
 Arrays in numpy can have any number of dimentions. You can access a component of a numpy array using the `[]` operator.
 
@@ -608,9 +635,9 @@ x = np.array([[1, 2], [3, 4], [5, 6]])
 print(x[0, 0])
 ```
 
-As shown in this example, when working with multidimensional arrays, multiple indices can be provided separated by a comma. The first index corresponds to the outermost array, while the last index corresponds to the innermost array.
+As shown in this example, when working with multidimensional arrays, multiple indices can be provided separated by a comma. The first index corresponds to the outermost array, while the last index corresponds to the innermost array. Like python lists, negative indices count backward from the end, so `x[-1]` is the last element of a 1D array. 
 
-You can also use the range operator `:` to select a range of indices.
+You can also use the range operator `:` to select a range of indices, inclusive of the starting point and exclusive of the ending point.
 
 ```py
 print(x[1:3, :])
@@ -618,27 +645,33 @@ print(x[1:3, :])
 
 The range operator `:` has a default starting point of the first element (0) and a default ending point after the last element when not specified, meaning that `:` by itself with select all indices along a given axis.
 
+You can get the dimensions of an array with using `shape`, which returns a tuple of the dimensions.
+
+```py
+print(x.shape)
+```
+
+There are also various numpy functions that can reduce dimensions such as `np.sum`, `np.mean`, and `np.std`, which take the sum, mean, and standard deviation of the entries of an array respectively. When used without an argument, they reduce the array to a single scalar, though an axis can be specified to just take the sum/mean/standard deviation of a particular axis and return a lower dimensional array.
+
 An important feature of numpy is **broadcasting** whereby a user can perform operations on two objects, even if they do not have the same shape (i.e. are not arrays of the same size). The most common usage of this is to broadcast a scalar value to an array. For example, the code below adds 2 to *each* component of the array `x`.
 
 ```py
 x = x + 2
 ```
 
-Broadcasting is frequently combined with boolean indexing, which will be explained further in the next section. If `x` is an array and `y` is a boolean array of the same shape, then `x[y]` refers to the components of `x` for which `y` is true. As an example, the following code subtracts 2 from all components of an array `x` that are greater than 4.
+Broadcasting also allows for operations on arrays of different shapes: any axes of length 1 can be extended (by duplication) to the length of the other array in the operation, and if one array is lower dimension than the other, it will be expanded by duplication adding dimensions "on the left".
 
 ```py
-# create boolean array with broadcasting
-# greater_than_four will have the same shape as x
-greater_than_four = x > 4
-
-x[greater_than_four] -= 2
+a = np.array([[2.4, 3.5], [5.1, 0.5] [2.5,8.0]])
+b = np.array([[1.0], [2.0], [3.0]])
+c = a+b
 ```
 
-`numpy` functions like `np.sqrt()`, `np.absolute()`, etc. can be used to perform component-wise operations on `numpy` or `awkward` arrays.
+More details on numpy broadcasting can be found [here](https://numpy.org/doc/stable/user/basics.broadcasting.html).
 
-Awkward array or `awkward` serves as an extension to `numpy` for dealing with data that are not rectangular arrays. This is common in particle physics where the data might consist of a collection of particles for each "event", but the number of particles is different for each event.
+Awkward array or `awkward` serves as a generalization of `numpy` for dealing with data that are not rectangular arrays. This is common in particle physics where the data might consist of a collection of particles for each "event", but the number of particles is different for each event.
 
-`awkward`'s array class is just called `ak.Array` and can be used just like `np.array` in terms of providing vectorized operations, indexing, broadcasting, etc.
+`awkward`'s array class is just called `ak.Array` and for the most part can be used just like `np.array` in terms of providing vectorized operations, indexing, broadcasting, etc.
 
 ```py
 x = ak.Array([[1.0, 8.7, 5.7], [4.8], [7.0, 1.5]])
@@ -647,53 +680,15 @@ y = ak.Array([[3.1, 8.0, 1.2], [7.8], [5.3, 0.2]])
 z = x + y
 ```
 
-Boolean indexing is commonly used with awkward arrays for masking/filtering.
+The type and dimensions of an `awkward` array `x` can be retrieved with `x.type` and printed with `x.type.show()`. Each dimension can be ether regular (a fixed length) or ragged (variable length). Completely regular arrays work identically to numpy, though arrays with ragged dimensions do have some slight differences such as that broadcasting can add dimensions "on the right" rather than "on the left".
 
-```py
-z = z[z > 8.0]
-```
-
-We will often work with awkward Records. You can think of a record as a dictionary/class whose elements are awkward arrays.
-
-```py
-electrons = ak.Array({
-    'px' : [5.6, 8.7, 0.2],
-    'py' : [0.1, 5.0, 3.7],
-    'pz' : [3.7, 0.6, 5.5]
-})
-
-print(electrons.px)
-print(electrons.py)
-print(electrons.pz)
-```
-
-The advantage of using a record is that you can filter all the awkward arrays contained in the record in a single statement.
-
-```py
-electrons_pt = np.sqrt(electrons.px**2 + electrons.py**2)
-
-highpt_electrons = electrons[electrons_pt > 4.0]
-```
-
-You can also easily add new data to an existing record using the `[]` operator.
-
-```py
-electrons['quality'] = electron_quality
-```
-
-There are several useful functions for working with `awkward` arrays. The `ak.sum()` function will replace a given dimension of an array with the sum over it's components. This is particularly useful when used with `axis=-1`. When provided booleans, sum will treat `True` as `1` and `False` as `0`. This allows one to count the number of elements meeting certain criteria. For example, if `electron_pt` is the transverse momenta of electrons (inner index) by event (outer index), we can get the number of electrons in each event with transverse momentum greater than 20 as an array with `ak.sum`.
+There are various useful functions for working with `awkward` arrays. The `ak.sum()` function will replace a given dimension of an array with the sum over it's components. This is particularly useful when used with `axis=-1`. When provided booleans, sum will treat `True` as `1` and `False` as `0`. This allows one to count the number of elements meeting certain criteria. For example, if `electron_pt` is the transverse momenta of electrons (inner index) by event (outer index), we can get the number of electrons in each event with transverse momentum greater than 20 as an array with `ak.sum`.
 
 ```py
 ak.sum(electron_pt > 20, axis=-1)
 ```
 
-Functions that work analogously to `ak.sum` include `ak.prod`, `ak.min`, `ak.max`, `ak.argmin`, `ak.argmax`, `ak.count`, `ak.mean`, `ak.var`, and `ak.std`. A common `numpy` function used for both `numpy` and `awkward` arrays is `np.where`, which is effectively an if statment.
-
-```py
-lead_lepton_pt = np.where(lead_electron_pt > lead_muon_pt, 
-                          lead_electron_pt, 
-                          lead_muon_pt)
-```
+Some functions that work analogously to `ak.sum` include `ak.prod`, `ak.min`, `ak.max`, `ak.argmin`, `ak.argmax`, `ak.count`, `ak.mean`, `ak.var`, and `ak.std`. 
 
 You will also commonly need to generate new `numpy` and `awkward` arrays. A particularly common way to initialize them is with the `zeros_like`, `ones_like`, and `full_like` methods, which generate a new array with the same shape as an existing one but filled with all zeros, ones, or a fixed value respectively.
 
@@ -705,28 +700,39 @@ You will also commonly need to generate new `numpy` and `awkward` arrays. A part
 Muon_mass = ak.full_like(Muon_pt, 0.106)
 ```
 
-<!-- masking -->
-<!-- more on awkward -->
-<!-- awkward indexing, combinatorics -->
-
 You can find more information about `numpy` and `awkward` in their [respective](https://numpy.org/doc/stable/) [documentation](https://awkward-array.org/doc/main/index.html) pages.
 
 ## Indexing and manipulation with awkward
 
-As in the previous section, we will assume we have imported `numpy` and `awkward`.
+<!--Content: -->
+<!--boolean indexing -->
+<!--numeric indexing -->
+<!--masking and working with none -->
+
+In this section, you will learn some useful tricks for indexing and manipulating `numpy` and `awkward` arrays. As in the previous section, we will assume we have imported `numpy` and `awkward`.
 
 ```py
 import numpy as np
 import awkward as ak
 ```
 
-We have already seen how we can use boolean indexing to filter data. For example, if `events` is an `awkward` record, we can select only events with two electrons with pt greater than 20 using
+One of the most useful tricks is boolean indexing. If `x` is a (`numpy`/`awkward`) array and `y` is a boolean array of the same shape, then `x[y]` refers to the components of `x` for which `y` is true. As an example, the following code subtracts 2 from all components of an array `x` that are greater than 4.
 
 ```py
-events_filtered = events[events.Electron_pt > 20]
+# create boolean array with broadcasting
+# greater_than_four will have the same shape as x
+greater_than_four = x > 4
+
+x[greater_than_four] -= 2
 ```
 
-Another common indexing trick is using arrays of integer indices. Indexing an awkward array with an array of integer indexes will produce an array the same shape as the indexing array, but with the values replaced by those in the array being indexed. This is perhaps best demonstrated via example.
+Boolean indexing is commonly used with awkward arrays for filtering.
+
+```py
+highpt_electron_pt = electron_pt[electron_pt > 50]
+```
+
+Another common indexing trick for `awkward` arrays is using arrays of integer indices. Indexing an awkward array with an array of integer indexes will produce an array the same shape as the indexing array, but with the values replaced by those in the array being indexed. This is perhaps best demonstrated via example.
 
 ```py
 Electron_pt = ak.Array([[30.2, 21.4, 33.3], [42.0, 87.0], [58.3, 83.2]])
@@ -774,6 +780,93 @@ If you wanted to get the second value of each sub-array, but you are not sure if
 sorted_Electron_pt = ak.sort(Electron_pt, axis=-1, ascending=False)
 sorted_Electron_pt = ak.pad_none(Electron_pt, 2)
 second_highest_Electron_pt = ak.fill_none(sorted_Electron_pt[:, 1], 0.0)
+```
+### Exercise 2.1. Manipulating arrays
+
+We will generate some random data that is similar to what you might see in a collider experiment.
+
+```py
+import awkward as ak
+import numpy as np
+
+# initialize random number generator with seed for reproducibility
+
+rng = np.random.default_rng(12345)
+
+# we will generate random numbers with rng.random which takes the shape of
+# array to be generated, and rng.integers, which takes the lowest allowed 
+# value, highest allowed value, and shape of array to be generated
+
+# we convert a numpy array to an awkward array using ak.from_numpy
+# even though the arrays are regular-dimensioned, we want to treat the second
+# dimension as if it were ragged. This is what ak.from_regular(,1) does
+
+electron_pt = ak.from_regular(ak.from_numpy(rng.random((10000,2))*100.0),1)
+electron_eta = ak.from_regular(ak.from_numpy(rng.random((10000,2))*5.0-2.5),1)
+electron_id = ak.from_regular(ak.from_numpy(rng.integers(0,2,(10000,2))),1)
+photon_pt = ak.from_regular(ak.from_numpy(rng.random((10000,3))*150.0),1)
+photon_eta = ak.from_regular(ak.from_numpy(rng.random((10000,3))*10.0-5.0),1)
+photon_id = ak.from_regular(ak.from_numpy(rng.integers(0,2,(10000,3))),1)
+```
+
+We will discuss more below, but the data are formatted so that the outer/left index represents the event and the inner/right index represents the particles in the event. How many events does our data correspond to? How many electrons/photons are in each event?
+
+When using collider data, we typically apply some preselections to the objects. Filter all 6 arrays so that we consider only electrons with $p\_\mathrm{T}>20$ (GeV), $|\eta|<2.5$, and ID (representing some quality criteria) equal to 1 and only photons with $p\_\mathrm{T}>30$ (GeV), $|\eta|<2.5$, and ID equal to 1.
+
+Create new arrays with the number of selected electrons and photons in each event using `ak.count(array,axis)`. How many have at least two electrons and at least one photon (recall you can use `ak.sum(array, axis)` which treats boolean true and false as 1 and 0)? Construct an array that contains the largest selected photon $p_\mathrm{T}$ for each event with at least 2 selected electrons.
+
+## pandas and awkward records
+
+In this section we will assume we have imported `numpy`, `awkward`, and `pandas`.
+
+```py
+import awkward as ak
+import numpy as np
+import pandas as pd
+```
+
+Suppose we are working with the full event data consisting of many different arrays representing the properties of detected particles. If we want to examine the transverse momentum ($p\_\mathrm{T}$) of electrons in events with at least one photon, we could use boolean indexing
+
+```py
+filtered_electron_pt = electron_pt[nphoton >= 1]
+```
+
+But what if we want to look at many different properties of electrons such as their pseudorapditiy $\eta$, azimuthal angle $\phi$, mass, etc? Rather than having to filter many arrays independently, `awkward` offers a data structure called a record that can store many arrays inside of it. You can think of a record as a dictionary/class whose elements are awkward arrays.
+
+```py
+electrons = ak.Array({
+    'px' : [5.6, 8.7, 0.2],
+    'py' : [0.1, 5.0, 3.7],
+    'pz' : [3.7, 0.6, 5.5]
+})
+
+print(electrons.px)
+print(electrons.py)
+print(electrons.pz)
+```
+
+You can access a given array in a record either using member syntax like `electrons.px` or using element syntax like `electrons['px']`. The main advantage of using a record is that you can perform operations like filtering on all of the awkward arrays contained in the record in a single statement.
+
+```py
+electrons_pt = np.sqrt(electrons.px**2 + electrons.py**2)
+
+highpt_electrons = electrons[electrons_pt > 40.0]
+```
+
+You can also easily add a new array to an existing record using the `[]` operator.
+
+```py
+electrons['quality'] = electron_quality
+```
+
+While `numpy` does not by itself have functionality similar to `awkward` records, you can get similar functionality using **dataframes** provided by the `pandas` library. Like records, you can use a `pandas` dataframe like a dictionary of `numpy` arrays that allows you to perform operations on all contained arrays at once.
+
+```py
+rng = np.random.default_rng()
+df = pd.DataFrame()
+df['lead_electron_pt'] = rng.random((50,))*100
+df['lead_muon_pt'] = rng.random((50,))*100
+df_highpt = df[(df['lead_electron_pt']>50) & (df['lead_muon_pt']>50)]
 ```
 
 ## Physics vectors with vector
@@ -947,7 +1040,7 @@ Note that sometimes, such as when reading data from a file (described in more de
 ak.materialize(events.Electron_charge)
 ```
 
-## Data visualization with matplotlib and mplhep
+## Histograms and data visualization with hist, matplotlib, and mplhep
 
 ## Reading and writing data with uproot
 
@@ -1100,4 +1193,11 @@ You can find more information about `matplotlib` and `mplhep` in their [respecti
 
 ## Machine learning with xgboost and pytorch
 
+This section doesn't exist yet. In the meanwhile, you can reference [this tutorial](https://hsf-training.github.io/deep-learning-intro-for-hep/00-intro.html).
+<!-- also optuna -->
+
 # Probability and statistics
+
+## Concepts of probability and statistics
+
+## Statistical models and fitting
