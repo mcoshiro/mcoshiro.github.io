@@ -811,7 +811,7 @@ photon_id = ak.from_regular(ak.from_numpy(rng.integers(0,2,(10000,3))),1)
 
 We will discuss more below, but the data are formatted so that the outer/left index represents the event and the inner/right index represents the particles in the event. How many events does our data correspond to? How many electrons/photons are in each event?
 
-When using collider data, we typically apply some preselections to the objects. Filter all 6 arrays so that we consider only electrons with $p\_\mathrm{T}>20$ (GeV), $|\eta|<2.5$, and ID (representing some quality criteria) equal to 1 and only photons with $p\_\mathrm{T}>30$ (GeV), $|\eta|<2.5$, and ID equal to 1.
+When using collider data, we typically apply some preselections to the objects. Filter all 6 arrays so that we consider only electrons with $p\_\mathrm{T}>20$ (GeV), $\vert\eta\vert<2.5$, and ID (representing some quality criteria) equal to 1 and only photons with $p\_\mathrm{T}>30$ (GeV), $\vert\eta\vert<2.5$, and ID equal to 1.
 
 Create new arrays with the number of selected electrons and photons in each event using `ak.count(array,axis)`. How many have at least two electrons and at least one photon (recall you can use `ak.sum(array, axis)` which treats boolean true and false as 1 and 0)? Construct an array that contains the largest selected photon $p_\mathrm{T}$ for each event with at least 2 selected electrons.
 
