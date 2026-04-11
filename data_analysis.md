@@ -17,27 +17,15 @@ It is forseen that this tutorial will cover programming in Python; libraries for
 
 2. [Data analysis libraries](#data-analysis-libraries)
 
-    2.1. [numpy and awkward](#getting-started-with-numpy-and-awkward)
+    2.1. [Data manipulation](#data-manipulation-libraries:-numpy,-awkward,-pandas,-numba,-and-vector)
 
-    2.2. [Indexing in awkward](#indexing-and-manipulation-with-awkward)
+    2.2. [Data visualization](#histograms-and-data-visualization-with-hist,-matplolib,-and-mplhep)
 
-    2.3. [pandas and awkward records](#pandas-and-awkward-records)
+    2.3. [Reading and writing data](#reading-and-writing-data-with-uproot-and-coffea)
 
-    2.4. [vector](#physics-vectors-with-vector)
+    2.4. [Analysis of collider data](#the-structure-and-analysis-of-collider-data)
 
-    2.5. [numba](#numba-and-compiled-code)
-
-    2.6. [Data visualization](#histograms-and-data-visualization-with-hist-matplolib-and-mplhep)
-
-    2.7. [uproot](#reading-and-writing-data-with-uproot)
-
-    2.8. [Collider data](#the-structure-of-collider-data)
-
-    2.9. [Analysis of collider data](#data-analysis-of-collider-data)
-
-    2.10. [Scaling up with coffea](#scaling-up-with-coffea)
-
-    2.11. [Machine learning](#machine-learning-with-xgboost-and-pytorch)
+    2.5. [Machine learning](#machine-learning-with-xgboost-and-pytorch)
 
 3. [Probability and statistics](#probability-and-statistics)
 
@@ -60,8 +48,8 @@ Once you have installed miniforge, you can create a python environment, which we
 ```sh
 conda create --name hep_default python=3.12
 conda install conda-forge::coffea 
-conda install awkward-pandas
 conda install jupyterlab
+conda install fsspec-xrootd
 ```
 
 After creation, you can activate this environment on subsequent logins by running:
@@ -576,7 +564,11 @@ Much of the rest of this tutorial will focus on working with specific libraries 
 
 # Data analysis libraries
 
-## Getting started with numpy and awkward
+## Data manipulation libraries: numpy, awkward, pandas, numba, and vector
+
+Interpreting python statements is actually very slow, so to analyze large amounts of data, we will need to have more efficient ways to perform data manipulation. This is where the `numpy` and `awkward` libaries come in. These libraries allow us to do "vectorized" operations across large amounts of data in just one statement. `awkward` records and `pandas` dataframes also allow for operations on many "columns" of data at once. `vector` provides new data types and operations for physics four vectors. Finally, when there are no built-in `numpy` or `awkward` functions for doing the desired data manipulation, the `numba` library can be used to compile python code and make custom fast functions.
+
+### Getting started with numpy and awkward
 
 <!--Content:-->
 <!--Intro to numpy arrays and vector operations/functions-->
@@ -586,7 +578,7 @@ Much of the rest of this tutorial will focus on working with specific libraries 
 <!--Intro to awkward arrays -->
 <!--Creating arrays -->
 
-Interpreting python statements is actually very slow, so to analyze large amounts of data, we will need to have more efficient ways to perform manipulations. This is where the `numpy` and `awkward` libaries come in. These libraries allow us to do "vectorized" operations across large amounts of data in just one statement. Throughout this section, we will assume we have imported `numpy` and `awkward` as follows:
+Throughout this section, we will assume we have imported `numpy` and `awkward` as follows:
 
 ```py
 import numpy as np
@@ -702,7 +694,7 @@ Muon_mass = ak.full_like(Muon_pt, 0.106)
 
 You can find more information about `numpy` and `awkward` in their [respective](https://numpy.org/doc/stable/) [documentation](https://awkward-array.org/doc/main/index.html) pages.
 
-## Indexing and manipulation with awkward
+### Indexing and manipulation with awkward
 
 <!--Content: -->
 <!--boolean indexing -->
@@ -815,7 +807,7 @@ When using collider data, we typically apply some preselections to the objects. 
 
 Create new arrays with the number of selected electrons and photons in each event using `ak.count(array,axis)`. How many have at least two electrons and at least one photon (recall you can use `ak.sum(array, axis)` which treats boolean true and false as 1 and 0)? Construct an array that contains the largest selected photon $p_\mathrm{T}$ for each event with at least 2 selected electrons.
 
-## pandas and awkward records
+### pandas and awkward records
 
 In this section we will assume we have imported `numpy`, `awkward`, and `pandas`.
 
@@ -859,7 +851,7 @@ You can also easily add a new array to an existing record using the `[]` operato
 electrons['quality'] = electron_quality
 ```
 
-While `numpy` does not by itself have functionality similar to `awkward` records, you can get similar functionality using **dataframes** provided by the `pandas` library. Like records, you can use a `pandas` dataframe like a dictionary of `numpy` arrays that allows you to perform operations on all contained arrays at once.
+While `numpy` does not by itself have functionality similar to `awkward` records, you can get similar functionality using **dataframes** provided by the `pandas` library. Like records, you can think of a `pandas` dataframe like a dictionary of `numpy` arrays (technically they are `pandas` series, but we will not worry about the differences here) that allows you to perform operations on all contained arrays at once.
 
 ```py
 rng = np.random.default_rng()
@@ -869,7 +861,7 @@ df['lead_muon_pt'] = rng.random((50,))*100
 df_highpt = df[(df['lead_electron_pt']>50) & (df['lead_muon_pt']>50)]
 ```
 
-## Physics vectors with vector
+### Physics vectors with vector
 
 For this section we will assume we have imported
 
@@ -934,7 +926,7 @@ For most purposes, this will be sufficient, however, for some purposes (such as 
 Dimuon_mass = ak.enforce_type(Dimuon_p4.mass, 'float32')
 ```
 
-## Numba and compiled code
+### Numba and compiled code
 
 Sometimes, you will need to perform operations that are too complex to easily describe using numba and awkward's built-in functions. A common case of this is combinatoric matching, which is possible in [simple cases](https://awkward-array.org/doc/main/user-guide/how-to-combinatorics-best-match.html), but quickly becomes cumbersome as the matching procedure gets more complicated. In this case, you can use a manual loop, but because interpreted python is very slow, you will want to compile the loop code. This can be done with the `numba` library by using the `@nb.njit` decorator before the function. The following function shows an example that finds a Z boson candidate from awkward arrays of electrons and muons properties.
 
@@ -995,7 +987,7 @@ def get_Dilepton(Electron_charge: ak.Array, Electron_pt: ak.Array,
   return Dilepton_pt, Dilepton_eta, Dilepton_phi, Dilepton_m
 ```
 
-Note that within `nb.njit`-compiled code, certain functionalities are unavailable. Most notably, although you can pass awkward arrays as arguments and work with them, you cannot use any `ak` functions. If you need to generate a new awkward array, you must use `ak.ArrayBuiler` by initializing a builder outside of the function, passing it in, then calling its `snapshot` method. You can find the ArrayBuilder documentation [here](https://awkward-array.org/doc/main/reference/generated/ak.ArrayBuilder.html#ak.ArrayBuilder).
+Note that within `nb.njit`-compiled code, certain python functionalities are unavailable. Most notably, although you can pass awkward arrays as arguments and work with them, you cannot use any `ak` functions. If you need to generate a new awkward array, you must use `ak.ArrayBuiler` by initializing a builder outside of the function, passing it in, then calling its `snapshot` method. You can find the ArrayBuilder documentation [here](https://awkward-array.org/doc/main/reference/generated/ak.ArrayBuilder.html#ak.ArrayBuilder).
 
 ```py
 @nb.njit
@@ -1042,7 +1034,89 @@ ak.materialize(events.Electron_charge)
 
 ## Histograms and data visualization with hist, matplotlib, and mplhep
 
-## Reading and writing data with uproot
+Creating visual representation of data is a key part of data analysis that helps the analyzers understand the properties of the data. In particle physics, by far the most ubiquitous and useful data visualization is the **histogram**.
+
+In particle physics, a histogram is more than just a type of plot; a histogram can be though of as an alternate data structure for storing low-dimensional data. Whereas standard columnar (tabular) data is represented as a series of rows (entries), each described as a tuple of numbers for the columns, the same data is represented in an n-dimensional histogram as a series of **bin** counts describing how many rows fall into each bin. When there are few columns (dimensions) and the histogram binning is not overly fine, histograms can provide nearly the same information as columnar data in much more compact form.
+
+For very simple histograms, you can convert a numpy array representing a single column into a numpy array representing the bin counts of the histogram with the `np.histogram` function documented [here](https://numpy.org/doc/stable/reference/generated/numpy.histogram.html). For more complex histograms (higher dimensions, irregular binning, histograms storing uncertainties) or for performing manipulations with histograms, one must use something more complex. We will use the `hist` [library](https://hist.readthedocs.io/en/latest/user-guide/quickstart.html).
+
+```py
+import hist
+```
+
+You can construct a histogram using `hist.Hist.new` followed by your axes and storage.
+
+```py
+my_onedim_hist = hist.Hist.new.Reg(30, 15, 75, name='pt').Weight()
+my_twodim_hist = (hist.Hist.new.Reg(30, 15, 75, name='pt')
+                  .Var([-2.5, -1.5, 0.0, 1.5, 2.5], name='eta').Weight())
+```
+
+In this example, we have used both `Reg[ular]` (evenly-spaced bins) and `Var[iable]` (irregularly-spaced bins) axes. There are other axis types as well such as integer axes `Int` and categorical axes like `IntCat` and `StrCat`. This example uses the `Weight` storage, which stores the counts for each bin as well as the uncertainty on the count. This is typically the most useful storage type for particle physics.
+
+If you have some data in the form of ex. a `numpy` or flat `awkward` array, you can fill a histogram using the `fill` function, which takes arrays for each dimension of the histogram followed by an optional weight if your data are weighted.
+
+```py
+my_onedim_hist.fill(photon_pt, weight=weight)
+my_twodim_hist.fill(photon_pt, photon_eta, weight=weight)
+```
+
+There are various manipulations you can perform with histograms. For example, you can add or subtract two histograms using the regular python `+`/`-`. You can also scale the histogram yields with the `*` and `/` operators, which is very common for normalizing histograms
+
+```py
+my_normalized_hist = my_hist / my_hist.sum().value
+```
+
+You can find more information about the types of manipulations you can perform in the hist documentation.
+
+To actually create a visualization of a histogram, we will use the `mplhep` library, which is a wrapper around a library called `matplotlib`. You can find more information on their respective websites [here](https://mplhep.readthedocs.io/en/latest/) and [here](https://matplotlib.org/).
+
+```py
+import matplotlib.pyplot as plt
+import mplhep as mh
+```
+
+For a 1D histogram, a typical workflow might looks like the following code.
+
+```py
+fig, ax = plt.subplots()
+mh.histplot(my_onedim_hist, ax=ax, label='Data', histtype='step')
+ax.legend(loc='upper right')
+ax.set_xlabel(r'$p_{\mathrm{T}}$ [GeV]')
+ax.set_ylabel('Events/2 GeV')
+plt.savefig('plots/myplot.pdf')
+```
+
+We define a new plot with `plt.subplots()`, then plot our histogram with the `mh.histplot` function, to which you can provide either an numpy histogram unrolled with the `*` operator (`*np.histogram(...)`) or a `hist` histogram. In this example we've used the `'step'` plotting style, which plots the histogram as an outline, but the `'fill'` and `'errorbar'` styles are also commonly used. You can plot multiple histograms on the same plot by simply making multiple calls to `mh.histplot`. We then set our legend position, add x- and y-axis labels, and save the plot to a file.
+
+In particle physics, 2D histograms are most commonly displayed as color maps. You can use the `mh.hist2dplot` for this.
+
+```py
+fig, ax = plt.subplots()
+mh.hist2dplot(my_twodim_hist, ax=ax, cbar=True)
+ax.set_xlabel(r'$p_{\mathrm{T}}$ [GeV]')
+ax.set_ylabel(r'$\eta$')
+plt.savefig('plots/my_twodim_plot.pdf')
+```
+
+It is very important in science to label your plots with axes labels, and legend in the cases where for example is there is more than one histogram in the same plot.
+
+You can set logarithmic axes using the `set_xscale` and `set_ysclae` methods on the axis object from `plt.subplots`.
+
+```py
+ax.set_xscale('log')
+ax.set_yscale('log')
+```
+
+You can also set the range of the y-axis with the `set_ylim` function.
+
+```py
+ax.set_ylim(0, 1.4)
+```
+
+<!-- TODO add ratio plot info, more styling? -->
+
+## Reading and writing data with uproot and coffea
 
 In this section we will assume you have imported the following libraries:
 
@@ -1066,7 +1140,7 @@ with uproot.open(filename) as root_file:
 
 You can see the named data in the file using `root_file.keys()` and access a given data structure using the `[]` operator. For example, if the file has a TTree named `'tree'`, you can access it via `root_file['tree']` and check the type via `type(root_file['tree'])`.
 
-TTrees consist of columnar data analogous to a pandas dataframe or an awkward record. You can see the columns using `my_tree.keys()`. We will typically extract the TTree data into an awkward array. You can get an awkward array with the data for a single column (also called a TBranch in root data) of a TTree with
+TTrees consist of columnar data analogous to a awkward record. You can see the columns using `my_tree.keys()`. We will typically extract the TTree data into an awkward array. You can get an awkward array with the data for a single column (also called a TBranch in root data) of a TTree with
 
 ```py
 tree = root_file['tree']
@@ -1080,6 +1154,14 @@ event_data = tree.arrays(['column1','column2','column3'])
 ```
 
 If you do not provide a list of columns, the `TTree.arrays` function will return a record with all columns, which can be quite large depending on the data set. You can also retrieve the data as a numpy array/dictionary of arrays or as a pandas series/dataframe using the optional argument `library='np'` or `library='pd'` for the `TBranch.array` and `TTree.arrays` functions.
+
+Since collider data, even in very reduced formats, can still consist of many TBs, you frequently will not be able to read all of the data into memory at once. You can select only specific columns, but you also load only specific rows using the optional `entry_start` and `entry_stop` arguments to `TBranch.array` or `TTree.arrays`. 
+
+```py
+# just load the first 1000 events
+# if you do not specify the columns, all columns will be loaded
+event_data = tree.arrays(entry_stop=1000)
+```
 
 Once you have the data as an awkward array/record, you can easily inspect it in the usual way. For example, if your data has a column called `jet_pt`, you can inspect the `jet_pt` for the `n`th event using
 
@@ -1096,7 +1178,92 @@ with ur.recreate(filename) as output_file:
 
 You can find more information about `uproot` on its [documentation page](https://uproot.readthedocs.io/en/latest/basic.html).
 
-## The structure of collider data 
+## Exercise 2.2. A first look at NanoAOD
+
+Try opening the CMS open data file 
+
+```
+opendata_file = ur.open('root://eospublic.cern.ch//eos/opendata/cms/mc/RunIISummer20UL16NanoAODv9/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/106X_mcRun2_asymptotic_v17-v1/280000/6293BAC8-2AB6-4A4A-BFEA-83E328B9C44F.root')
+```
+
+This is a file in the NanoAOD format we will explore more later. This file contains a TTree with the name `Events`. What columns are in this tree? Try reading some of the data with the `TTree.arrays` function, noting you may need to specify columns and `entry_stop` to fit it in your computer's memory. How many jets are in the 10th event? What are their tranvserse momenta $p_{\mathrm{T}}$ (this is a branch `Jet_pt`)?
+
+### Scaling up with coffea
+
+As mentioned, data analysis in particle physics typically involves data sets consisting of many files whose contents do not all fit in memory at once. You can use uproot and manually loop over files and subsets of data within the files using the `entry_start` and `entry_stop` methods, but their is another library that will automate this for us called `coffea`, documented [here](https://coffea-hep.readthedocs.io/en/latest/index.html). We will import various libaries as usual.
+
+```py
+import awkward as ak
+import coffea
+import coffea.processor
+import hist
+import matplotlib.pyplot as plt
+import mplhep as mh
+```
+
+The first thing we will need to is write a processor, the analysis code that will be applied to each block of data. Let's try making histograms from the `Jet_pt` and `Jet_eta` branches
+
+```py
+def my_processor(events):
+  # coffea will call this function on each subset of data for us
+  # events will be an awkward record (with some metadata)
+
+  dataset_name = events.metadata['dataset']
+  
+  jet_pt_hist = hist.Hist.new.Reg(50,30,200,name='pt').Weight()
+  jet_eta_hist = hist.Hist.new.Reg(50,-4.8,4.8,name='eta').Weight()
+
+  jet_pt_hist.fill(ak.flatten(events['Jet_pt']))
+  jet_eta_hist.fill(ak.flatten(events['Jet_eta']))
+
+  return { dataset_name: { 'jet_pt_hist' : jet_pt_hist,
+                           'jet_eta_hist' : jet_eta_hist } }
+```
+
+The processor should return a python dictionary. In our example, we return a dictionary indexed by the dataset name retrieved from the metadata, whose elements are themselves dictionaries: the output histograms indexed by their names. The data in the dictionaries such as histograms and numbers will automatically be summed across all of the chunks of data processed by coffea.
+
+Once we have a processor, we will need to specify the datasets to process. This is also done with a dictionary
+
+```py
+datasets = {'TTTo2L': {'treename' : 'Events',
+                       'files': ['root://eospublic.cern.ch//eos/opendata/cms/mc/RunIISummer20UL16NanoAODv9/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8/NANOAODSIM/106X_mcRun2_asymptotic_v17-v1/280000/6293BAC8-2AB6-4A4A-BFEA-83E328B9C44F.root'],
+                       'metadata': {'year': 2016}}
+           }
+```
+
+In the format we will use, the dataset dictionary consists of dictionaries indexed by the dataset names. For the sub-dictionaries, we need to specify the file names as a list of strings, the name of the TTree in the files, and any other metadata we might want to pass to the processor.
+
+We can now use `coffea` to run our processor on the specified data sets.
+
+```py
+runner = coffea.processor.Runner(
+    executor=coffea.processor.IterativeExecutor(),
+    schema=coffea.nanoevents.BaseSchema)
+
+result = runner(datasets, processor_instance=my_processor)
+```
+
+The executor tells coffea how to run your code. We are just using `IterativeExecutor`, which just runs the code on your computer in a single thread. You can also try `FuturesExecutor`, which runs in multiple threads. The real power of coffea is its ability to distribute jobs across parallel computing systems, though we will not use that functionality in this tutorial.
+
+The above code will run our processor over the data sets specified and store the result in `result`. We can then get the results out of `result` and plot them with `mplhep`.
+
+```py
+pt_fig, pt_ax = plt.subplots()
+mh.histplot(result['TTTo2L']['jet_pt_hist'], ax=pt_ax, label='TT')
+pt_ax.set_xlabel(r'$p_{\mathrm{T}}$ [GeV]')
+pt_ax.set_ylabel('Events/3.4 GeV')
+plt.savefig('plots/jet_pt_plot.pdf')
+
+eta_fig, eta_ax = plt.subplots()
+mh.histplot(result['TTTo2L']['jet_eta_hist'], ax=eta_ax, label='TT')
+ax.set_xlabel(r'$\eta$')
+ax.set_ylabel('Events/0.192')
+plt.savefig('plots/jet_eta_plot.pdf')
+```
+
+## The structure and analysis of collider data 
+
+### The structure of collider data
 
 We will look at the data from general purpose collider experiments like ATLAS and CMS. In the future, this guide may be expanded with data from other types of experiments such as heavy flavor and neutrino experiments. You can find ATLAS and CMS open data at the [CERN open data portal](https://opendata.cern.ch/).
 
@@ -1126,13 +1293,42 @@ Taus are relatively unstable and quickly decay in one of three ways: into a pair
 
 The particles that interact through the strong interaction are called quarks and gluons. Due to the strong interaction, a high-energy quark or gluon will typically radiate away much of its energy as additional quarks and gluons after being produced. This cluster of quarks and gluons will then form composite particles, hadrons, and the resulting cluster of hadrons (and hadron decay products) is called a QCD jet. Reconstructed jets are thus used as a proxy to a high-energy quark or gluon, excluding the top quark, which decays before it is able to form a coherent jet. The jets from different flavors of quarks and gluons are typically hard to discriminate (it is tricky to even rigorously define jet flavor). However, jets from bottom quarks, and to a lesser extent charm quarks, can be discriminated from other jets. Jets from bottom and charm quarks are called b jets and c jets respectively.
 
-Though neutrinos are not visible to the detectors employed in these experiments, the presence of neutrinos can be inferred using conservation of momentum. In general, we do not know the energy/momentum of the colliding quarks/gluons inside of the proton since the proton's energy/momentum will be randomly divided amongst its constituents. However, we do know that the collisions are roughly head-on, meaning that the momentum of the colliding particles is roughly 0 in the plane transverse to the collision. Based on the particles detected emerging from the collision, we can thus use conservation of momentum to calculate the missing transverse momentum ($p\_\mathrm{T}^\mathrm{miss}$), which can be attributed to particles that are not detected such as neutrinos. Small amounts of missing transverse momentum will be generated by mismeasurement, but large missing transverse momentum is typically indicative of neutrino production.
+Though neutrinos are not visible to the detectors employed in these experiments, the presence of neutrinos can be inferred using conservation of momentum. In general, we do not know the energy/momentum of the colliding quarks/gluons inside of the proton since the proton's energy/momentum will be randomly divided amongst its constituents. However, we do know that the collisions are roughly head-on, meaning that the momentum of the colliding particles is roughly 0 in the plane transverse to the collision. Based on the particles detected emerging from the collision, we can thus use conservation of momentum to calculate the missing transverse momentum ($p\_\mathrm{T}^\mathrm{miss}$), which can be attributed to particles that are not detected such as neutrinos. Small amounts of missing transverse momentum will be generated by mismeasurement, but large missing transverse momentum is typically indicative of neutrino production. Missing transverse momentum is also sometimes called "MET" in data sets for historical reasons.
 
 Finally, the W boson, Z boson, Higgs boson, and top quark have very short lifetimes ($< 10^{-20}$ s) and are typically reconstructed via their decays into some combination of the physics objects above. W bosons have about a 2/3 probability to decay into two quarks, generating two jets, and about a 1/3 probability of decaying into a charged lepton (electron, muon, or tau) plus a neutrino. Z bosons decays into a pair of quarks with about a 70% probability, into a pair of neutrinos with about a 20% probability, and into a pair of charged leptons with about a 10% probability. Top quarks almost always decay into a bottom quark and a W boson. Finally, the Higgs boson has a rather complicated set of [decay channels](https://pdg.lbl.gov/2025/reviews/rpp2025-rev-higgs-boson.pdf), with five having been observed so far: two photons (0.2%), two Z bosons (2.6%), two W bosons (21%), two taus (6.3%), and two bottom quarks (58%). Simulated samples are often divided based on the heavy particles (W, Z, top, and Higgs) in the process; hard scattering processes without heavy particles are dominated by events with high-energy quarks and gluons and are "QCD multijet". The vast majority of proton-proton collisions do not involve any hard scattering and are sometimes called "minimum bias" events.
 
 As a final note, particle physicists often do not distinguish between particles and antiparticles, so an "electron" really means an electron or an antielectron. At the analysis level, one might requires one to have negative charge and the other to have positive charge, but both particles are referred to as "electrons" in practice.
 
-## Data analysis of collider data
+### Data sets and triggers
+
+As mentioned in the previous section, simulated data sets (typically called "Monte Carlo" or "MC" in particle physics jargon) are generally split by the heavy particles (W, Z, top, and Higgs) simulated. The rough cross sections for some processes are given for 13 TeV proton-proton collisions. Cross sections are just a measure of probability: you can convert between the two by dividing the cross section for a given process by the total cross section for the given process and energy. For example, the total cross section for proton-proton collisions at 13 TeV is about 100 mb.
+
+| Process      | Cross section | Probability       |
+|--------------|---------------|-------------------|
+| All          | 100 mb        | 1                 |
+| QCD Multijet | 200 $\mu$b    | 1 in 500          |
+| W            | 100 nb        | 1 in 1 million    |
+| Z            | 50 nb         | 1 in 2 million    |
+| ttbar        | 900 pb        | 1 in 111 million  |
+| single top   | 200 pb        | 1 in 500 million  |
+| WW           | 80 pb         | 1 in 1.2 billion  |
+| H            | 50 pb         | 1 in 2 billion    |
+| WZ           | 30 pb         | 1 in 3 billion    |
+| ZZ           | 15 pb         | 1 in 6 billion    |
+
+The vast majority of collisions (sometimes called minimum bias) are soft scattering where no high $p_\mathrm{T}$ particles and thus no hard physics objects are produced. Since the strong interaction is considerably stronger than the electroweak interactions, the vast majority of hard scattering events are QCD multijet events, where one observes high $p_\mathrm{T}$ quarks, gluons, and occaisionally photons. Since the colliding quarks or gluons can always emit gluons, quarks, or photons, any number of jet and photon physics objects can be produced in any process.
+
+The rarer "electroweak" processes such as W or Z production are often distinguished from the large QCD multijet background by requiring electron, muon, or hadronic tau physics objects, or by large missing transverse momentum from neutrinos. Having said this, the majority of W and Z bosons due decay into quarks, producing jets that are hard to distinguish from the large QCD multijet background.
+
+The processes studied in collider physics are quite rare, with probabilities often on the scale of 1 in a billion or smaller (the process HH$\to\mathrm{b}\overline{\mathrm{b}}\gamma\gamma$ that researchers are currently searching for has a probability less than 1 in a quadrillion!). In order to be able to perform these studies, the collider provides a very high rate of collisions averaging over a billion per second.
+
+The high rate of collisions is a major challenge for experiments. Each collision can produce tens or even hundreds of particles, meaning that the data rate produced by the experiment (after zero-suppression where readout is only performed for detectors that actually detected a particle) is around 40 TB/s currently, and will increase by an order of magnitude in the future. Since only a few GB/s of data can be written to disk, the vast majority of data must be discarded. Luckily, the processes that we are the most interested are very rare so we can try to save just the data corresponding to the interesting processes. The system that does this is called the **trigger system**.
+
+The trigger system uses criteria called triggers to decide which events to save and which to discard, typically using the presence and properties of physics objects as criteria. For rarer particles like electrons/muons/taus the trigger thresholds can be looser and most events with high $p_\mathrm{T}$ charged leptons are saved. In contrast, the high rate of QCD multijet events and the high amounts of spurious missing transverse momentum ($p_\mathrm{T}^\mathrm{miss}$) from mismeasurement mean that the thresholds on jet triggers and $p_\mathrm{T}^\mathrm{miss}$ triggers are much higher so only events with high $p_\mathrm{T}$ (or a large number of) jets or large $p_\mathrm{T}^\mathrm{miss}$ are saved. 
+
+Actual data (called "data" in particle physics jargon, contrast with simulation) is generally split into datasets based on which triggers collected the data set such as "SingleMuon", "SingleElectron", "JetMET", etc.
+
+### Data analysis of collider data
 
 In this section we will assume you have imported the following libraries
 
@@ -1180,16 +1376,6 @@ axis.set_xlabel('# Electrons (WP90)')
 axis.set_ylabel('# Events')
 plt.savefig('plots/mystery_nel.pdf')
 ```
-
-You can plot multiple plots on the same axis by simply making multiple calls to `mh.histplot`.
-
-**TODO** More information on matplotlib and mplhep
-
-You can find more information about `matplotlib` and `mplhep` in their [respective](https://matplotlib.org/stable/api/pyplot_summary.html) [documentation](https://mplhep.readthedocs.io/en/latest/) pages.
-
-<!-- matplotlib/mplhep somewhere -->
-
-## Scaling up with coffea
 
 ## Machine learning with xgboost and pytorch
 
