@@ -17,9 +17,9 @@ It is forseen that this tutorial will cover programming in Python; libraries for
 
 2. [Data analysis libraries](#data-analysis-libraries)
 
-    2.1. [Data manipulation](#data-manipulation-libraries:-numpy,-awkward,-pandas,-numba,-and-vector)
+    2.1. [Data manipulation](#data-manipulation-libraries-numpy-awkward-pandas-numba-and-vector)
 
-    2.2. [Data visualization](#histograms-and-data-visualization-with-hist,-matplolib,-and-mplhep)
+    2.2. [Data visualization](#histograms-and-data-visualization-with-hist-matplolib-and-mplhep)
 
     2.3. [Reading and writing data](#reading-and-writing-data-with-uproot-and-coffea)
 
@@ -1178,7 +1178,7 @@ with ur.recreate(filename) as output_file:
 
 You can find more information about `uproot` on its [documentation page](https://uproot.readthedocs.io/en/latest/basic.html).
 
-## Exercise 2.2. A first look at NanoAOD
+### Exercise 2.2. A first look at NanoAOD
 
 Try opening the CMS open data file 
 
@@ -1263,7 +1263,7 @@ plt.savefig('plots/jet_eta_plot.pdf')
 
 ## The structure and analysis of collider data 
 
-### The structure of collider data
+### Physics objects
 
 We will look at the data from general purpose collider experiments like ATLAS and CMS. In the future, this guide may be expanded with data from other types of experiments such as heavy flavor and neutrino experiments. You can find ATLAS and CMS open data at the [CERN open data portal](https://opendata.cern.ch/).
 
@@ -1328,9 +1328,232 @@ The trigger system uses criteria called triggers to decide which events to save 
 
 Actual data (called "data" in particle physics jargon, contrast with simulation) is generally split into datasets based on which triggers collected the data set such as "SingleMuon", "SingleElectron", "JetMET", etc.
 
-### Data analysis of collider data
+### Extended exercise: analysis of collider data
 
-In this section we will assume you have imported the following libraries
+### Data sets and processing
+
+We will now try to perform a basic data anlysis project: measuring the cross section (probability) to make top quark pairs in 13 TeV collisions using CMS open data. We will look at the final state one top quark decays via the chain 
+$\mathrm{t}\to\mathrm{W}\mathrm{b}\to\mathrm{e}\nu\mathrm{b}$ and the other one decays via $\mathrm{t}\to\mathrm{W}\mathrm{b}\to\mu\nu\mathrm{b}$. What are the physics objects you expect in these events(recall, you can always have any number of extra jets)? We target this decay mode because there is very little background: the presence of charged leptons like electrons and muons eliminates most of the QCD multijet background. What background do you think we are rejecting by requiring one electron and one muon rather than two electrons or muons (you can use the decays in the [PDG](https://pdglive.lbl.gov/Viewer.action) for reference)?
+
+First, we will need to locate the data on the [CMS open data portal](https://opendata.cern.ch/search?q=&f=experiment%3ACMS&l=list&order=desc&p=1&s=10&sort=mostrecent). The simulated sample with the decays of top quark pairs to two charged leptons and two neutrinos can be found [here](https://opendata.cern.ch/record/67801). Some other background samples we will consider are the production of Z bosons decaying to charged leptons [here](https://opendata.cern.ch/record/35671) and single top/tW production [here](https://opendata.cern.ch/record/64881), [here](https://opendata.cern.ch/record/64825), [here](https://opendata.cern.ch/record/64793), and [here](https://opendata.cern.ch/record/64693). The data sample we will use is the [single muon triggered sample](https://opendata.cern.ch/record/30563). For each of these, you can either download the sample (not recommended as they are 100s of GB) or access them remotely as we have been doing. To find the remote accessor, use the download index button on the open data portal to download a file that will containt the filenames, which should start with `root://eospublic.cern.ch/`. You can then use these with `uproot`/`coffea` as usual. The data in in the NanoAOD format, which is the smallest data format centrally provided by CMS. It contains information about the reconstructed physics objects, but not lower level information such as the individual reconstructed particles, reconstructed tracks, and reconstructed calorimeter clusters used to build the physics objects.
+
+There are a few different steps we will have to take to process the data sets. Real data can be messy since there are many things that can go wrong: detectors and electronics can experience glitches due to the high radiation environment, particles from outside the collisions such as the "beam halo" can enter the detector, electrical noise can fake particle detections, and so forth. As a result CMS performs many data quality checks. As a user, the main things we will check are the golden json and $p\_{\mathrm{T}}^{\mathrm{miss}}$ filters.
+
+There have been 3 long-term data-taking campaigns called Run 1 (2010-2012), Run 2 (2015-2018), and Run 3 (2022-2026). The open data consists just of one era of Run 2 2016 data. The data are divided into runs (not to be confused with the campaigns above, which are confusingly also called "Runs"). Runs are divided into luminosity blocks, which then consist of the events. Which runs/luminosity block ranges are certified as good to analyze are summarized in the so-called "golden json", which you can find [here](https://opendata.cern.ch/record/14220/files/Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt). After including the `json` module along with the standard libraries, the following functions can be used to check if given events are good according to the golden json.
+
+```py
+def golden_json_reader(json_filename: str):
+  """Parses golden json into numpy array for use with in_golden_json
+
+  Args:
+    json_filename: filename of golden json
+
+  Returns:
+    numpy array, outer index indicates (0) run (1) luminosity block start and
+    (2) luminosity block end while inner index indexes the good luminosity
+    blocks
+  """
+  with open(json_filename, 'r') as json_file:
+    good_runs = json.load(json_file)
+  runs = []
+  lumi_section_start = []
+  lumi_section_end = []
+  for run in good_runs:
+    for lumi_block_range in good_runs[run]:
+      runs.append(run)
+      lumi_section_start.append(lumi_block_range[0])
+      lumi_section_end.append(lumi_block_range[1])
+  golden_lumi_blocks = np.array([runs, lumi_section_start, lumi_section_end],
+                                dtype=int)
+  return golden_lumi_blocks
+
+@nb.njit
+def in_golden_json(golden_lumi_blocks: np.ndarray, run: ak.Array,
+    luminosityBlock: ak.Array, in_golden_json_builder: ak.ArrayBuilder
+    ) -> ak.ArrayBuilder:
+  """Function to check if a given data event passed data quality certification
+  and is in the "golden json"
+
+  Args:
+    golden_lumi_blocks: numpy array returned by golden_json_reader
+    run: CMS data-taking run
+    luminosityBlock: CMS data-taking luminosity block
+    in_golden_json_builder: array builder to create output
+
+  Returns
+    in_golden_json_builder
+  """
+  for ievt in range(len(run)):
+    in_golden_json = False
+    for irun in range(len(golden_lumi_blocks[0])):
+      if run[ievt] == golden_lumi_blocks[0,irun]:
+        if ((luminosityBlock[ievt] >= golden_lumi_blocks[1,irun]) and
+            (luminosityBlock[ievt] <= golden_lumi_blocks[2,irun])):
+          in_golden_json = True
+    in_golden_json_builder.boolean(in_golden_json)
+  return in_golden_json_builder
+```
+
+If using a NanoAOD coffea processor that provides a awkward record `events`, one can use these functions as follows.
+
+```py
+golden_lumi_blocks = golden_json_reader('data/Cert_271036-284044_13TeV_Legacy2016_Collisions16_JSON.txt')
+
+ak.materialize(events.run)
+ak.materialize(events.luminosityBlock)
+isgood_quality = in_golden_json(golden_lumi_blocks, events.run,
+    events.luminosityBlock, ak.ArrayBuilder()).snapshot()
+```
+
+The other data quality recommendation is to recommend individual events if they fail one of a set of so-called $p\_{\mathrm{T}}^{\mathrm{miss}}$ filters. The NanoAOD columns corresponding to these filters are shown in the following table.
+
+| 2016 Filters                              |
+|-------------------------------------------|
+| `Flag_goodVertices`                       |
+| `Flag_globalSuperTightHalo2016Filter`     |
+| `Flag_HBHENoiseFilter`                    |
+| `Flag_HBHENoiseIsoFilter`                 |
+| `Flag_EcalDeadCellTriggerPrimitiveFilter` |
+| `Flag_BadPFMuonFilter`                    |
+| `Flag_BadPFMuonDzFilter`                  |
+| `Flag_eeBadScFilter`                      |
+| `Flag_hfNoisyHitsFilter`                  |
+
+We will also require in data and simulation that events pass the `HLT_IsoMu24` standard trigger for isolated muons.
+
+Within a given event, we also generally apply quality criteria on specific physics objects. Because the needs of each analysis are different, the general reconstruction generally has very loose criteria for what is considered an electron, muon, jet, etc. We will want to apply some quality criteria on top of these criteria. Some suggested requirements are given in the tables below. 
+
+There are central algorithms developed, either by hand or using machine learning techniques, to reject "fake" objects. Note that "fake" objects refers to any reconstructed objects that don't correspond to the particles of interest from the original collision including particles from other collisions ("pileup") or particles produced downstream by decays of particles in the initial collision. We will use the "WP 90 Fall17v2 ID" for electrons, the "loose ID" for muons, and a combination of the "jet ID" and "jet pileup ID" for jets. For electrons and muons, we will make selections on relative isolation since most "fake" electrons and muons are actually heavy flavor hadrons inside jets that have decayed into electrons or muons, which means that they will generally not be very isolated. Relative isolation is simply the sum of $p\_{\mathrm{T}}$ of particles within some angular cone of the target particle divided by the $p\_{\mathrm{T}}$ of the target particle. Since fake objects generally increase exponentially at low $p\_{\mathrm{T}}$ we also add a selection on $p\_{\mathrm{T}}$. We make a selection on $\eta$ simply to ensure that the reconstructed particles are fully contained in areas of the experiment with full detector coverage. Finally, we make selections on the electron and muon impact parameters $d\_{xy}$ and $d\_{z}$, the displacement between the electron and muon track in the x/y plane or z axis from the reconstructed collision point (primary vertex) since this is expected to be 0 within uncertainty for electrons and muons coming from the collision of interest. 
+
+| Suggested electron criteria              |
+|------------------------------------------|
+| `events.Electron_mvaFall17V2noIso_WP90`  |
+| `events.Electron_pfRelIso03_all < 0.35`  |
+| `events.Electron_pt > 20`                |
+| `np.absolute(events.Electron_eta) < 2.5` |
+| `np.absolute(events.Electron_dxy) < 1.0` |
+| `np.absolute(events.Electron_dz) < 0.5`  |
+
+| Suggested muon criteria                  |
+|------------------------------------------|
+| `events.Muon_looseId`                    |
+| `events.Muon_pfRelIso03_all < 0.35`      |
+| `events.Muon_pt > 20`                    |
+| `np.absolute(events.Electron_eta) < 2.4` |
+| `np.absolute(events.Electron_dxy) < 1.0` |
+| `np.absolute(events.Electron_dz) < 0.5`  |
+
+| Suggested jet criteria                   |
+|------------------------------------------|
+| `events.Jet_jetId > 0`                   |
+| `(events.Jet_puId & 0x1) > 0`            |
+| `events.Jet_pt > 30`                     |
+| `np.absolute(events.Jet_eta) < 2.4`      |
+| `Jet_electron_dr > 0.4`                  |
+| `Jet_muon_dr > 0.4`                      |
+
+Note that since jet reconstruction is performed by clustering all particles, high momentum electrons and muons will also be included as "jets", so we also suggest requiring that the angular separation $\Delta R=\sqrt{(\Delta \eta)^2+(\Delta \phi)^2}$ between selected jets and the nearest selected lepton is at least 0.4. Note that since $\phi$ is an angle (defined between $-\pi$ and $\pi$), calculating $\Delta\phi$ is not as simple as taking the difference between $\phi$ values.
+
+The LHC experiment data sets are very large, with the full data set more than 100 TB in the smallest centrally produced format. Each analysis typically only uses a small fraction of the data, and so it is important to reduce the data size quickly to be able to do analysis on a reasonable time scale. Reduction of data is sometimes called skimming, slimming, and thinning. Skimming refers to removing rows/events that one will not use for a given analysis, slimming refers to removing columns that one will not use for a given analysis, and thinning refers to removing entries (typically particle candidates) within a given column/event. The below table gives a suggestion of what information to save (slimming/thinning). It consists of variables for the main physics objects and the generator weight for simulation, which will be discussed more in the next section. You can restrict to saving just events that pass the basic data quality criteria and triggers with at least 1 selected electron and 1 selected muon (skimming).
+
+| Suggested NanoAOD columns to save              |
+|------------------------------------------------|
+| `Electron_pt` (selected electrons)             |
+| `Electron_eta` (selected electrons)            |
+| `Electron_phi` (selected electrons)            |
+| `Electron_pfRelIso03_all` (selected electrons) |
+| `Electron_dxy` (selected electrons)            |
+| `Electron_dz` (selected electrons)             |
+| `Muon_pt` (selected muons)                     |
+| `Muon_eta` (selected muons)                    |
+| `Muon_phi` (selected muons)                    |
+| `Muon_pfRelIso03_all` (selected muons)         |
+| `Muon_dxy` (selected muons)                    |
+| `Muon_dz` (selected muons)                     |
+| `Jet_pt` (selected jets)                       |
+| `Jet_eta` (selected jets)                      |
+| `Jet_phi` (selected jets)                      |
+| `Jet_mass` (selected jets)                     |
+| `Jet_btagDeepFlavB` (selected jets)            |
+| `MET_pt` (selected jets)                       |
+| `MET_phi` (selected jets)                      |
+| `MET_phi` (selected jets)                      |
+| `genWeight` (simulation only)                  |
+
+To conclude this section of the exercise, write (and run) a coffea module that does basic data quality checks and saves the reduced data set to your machine. 
+
+A basic outline is given below, but contains only selections for muons and saves only muon information. You can extend it to include electron, jet, and $p\_{\mathrm{T}}&{\mathrm{miss}}$ information. You should also include in the dataset metadata a simulation flag, which is used to determine if the golden json should be used and whether there is a `genWeight` column present in the data set.
+
+```py
+def process_skim(events: ak.Array) -> dict:
+  dataset = events.metadata['dataset']
+  is_simulation = events.metadata['simulation']
+
+  if not is_simulation:
+    golden_lumi_blocks = golden_json_reader('data/Cert_271036-284044_13TeV_Legac
+y2016_Collisions16_JSON.txt')
+    ak.materialize(events.run)
+    ak.materialize(events.luminosityBlock)
+    isgood_quality = in_golden_json(golden_lumi_blocks, events.run,
+        events.luminosityBlock, ak.ArrayBuilder()).snapshot()
+
+  filters = (events.Flag_goodVertices
+             & events.Flag_globalSuperTightHalo2016Filter
+             & events.Flag_HBHENoiseFilter
+             & events.Flag_HBHENoiseIsoFilter
+             & events.Flag_EcalDeadCellTriggerPrimitiveFilter
+             & events.Flag_BadPFMuonFilter
+             & events.Flag_BadPFMuonDzFilter
+             & events.Flag_eeBadScFilter
+             & events.Flag_hfNoisyHitsFilter)
+
+  events['Muon_isgood'] = ((events.Muon_looseId)
+                           & (events.Muon_pfRelIso03_all < 0.35)
+                           & (events.Muon_pt > 20)
+                           & (np.absolute(events.Muon_eta) < 2.4)
+                           & (np.absolute(events.Muon_dxy) < 1.0)
+                           & (np.absolute(events.Muon_dz) < 0.5))
+
+  # write arrays with quality criteria for electrons and jets as well
+
+  nMuon = ak.sum(events['Muon_isgood'], axis=-1)
+
+  # require data quality filters, at least one muon, and the muon trigger
+  # extend this to also require an electron
+  events = events[filters & events.HLT_IsoMu24 & (nMuon >= 1)]
+  Muon_selections = events['Muon_isgood']
+
+  # create output as a dictionary
+  # extend this to include electrons, jets, and MET
+  output_columns = {}
+
+  output_columns['Muon_pt'] = events.Muon_pt[Muon_selections]
+  output_columns['Muon_eta'] = events.Muon_eta[Muon_selections]
+  output_columns['Muon_phi'] = events.Muon_phi[Muon_selections]
+  output_columns['Muon_pfRelIso03_all'] = (
+      events.Muon_pfRelIso03_all[Muon_selections])
+  output_columns['Muon_dxy'] = events.Muon_dxy[Muon_selections]
+  output_columns['Muon_dz'] = events.Muon_dz[Muon_selections]
+  if is_simulation:
+    output_columns['genWeight'] = events.genWeight
+
+  # write output to a root file
+  nano_fname = events.metadata['filename'].split('/')[-1]
+  fname = ('ntuples/skim_'+dataset+'_'
+           +nano_fname.replace('.root','')
+           +'_'+str(events.metadata['entrystart'])+'.root')
+  with ur.recreate(fname) as output_file:
+    output_file.mktree('Events', output_columns)
+
+  # we're writing the output as we go so no need to return anything to coffea
+  return {}
+```
+
+### Exploring the data
+
+### Assessing uncertainties and performing the measurement
+
+<!--In this section we will assume you have imported the following libraries
 
 ```py
 import awkward as ak
@@ -1359,23 +1582,7 @@ mh.histplot(*hist,
 axis.set_xlabel('# Electrons (WP90)')
 axis.set_ylabel('# Events')
 plt.savefig('plots/mystery_nel.pdf')
-```
-
-Histograms are ubiquitous in high-energy physics since they are a basic representation of the data projected onto one dimension that can easily be compared with appropriate probability densities (see section on probability). You can reduce a set of data into a histogram using the `np.histogram` function:
-
-`hist = np.histogram(data, nbins, (lower_bound, upper_bound))`
-
-You can then plot this histogram using the `matplotlib` library. We will use the `mplhep` library as a wrapper around `matplotlib`. Using `mplhep`, we can plot a histogram `hist` with just a few lines, as in the previous example.
-
-```py
-fig, axis = plt.subplots()
-mh.histplot(*hist,
-    label='Mystery dataset',
-    ax=axis)
-axis.set_xlabel('# Electrons (WP90)')
-axis.set_ylabel('# Events')
-plt.savefig('plots/mystery_nel.pdf')
-```
+```-->
 
 ## Machine learning with xgboost and pytorch
 
