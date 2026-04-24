@@ -1330,7 +1330,7 @@ Actual data (called "data" in particle physics jargon, contrast with simulation)
 
 ### Extended exercise: analysis of collider data
 
-### Data sets and processing
+### Data sets, processing, and cleaning
 
 We will now try to perform a basic data anlysis project: measuring the cross section (probability) to make top quark pairs in 13 TeV collisions using CMS open data. We will look at the final state one top quark decays via the chain 
 $\mathrm{t}\to\mathrm{W}\mathrm{b}\to\mathrm{e}\nu\mathrm{b}$ and the other one decays via $\mathrm{t}\to\mathrm{W}\mathrm{b}\to\mu\nu\mathrm{b}$. What are the physics objects you expect in these events(recall, you can always have any number of extra jets)? We target this decay mode because there is very little background: the presence of charged leptons like electrons and muons eliminates most of the QCD multijet background. What background do you think we are rejecting by requiring one electron and one muon rather than two electrons or muons (you can use the decays in the [PDG](https://pdglive.lbl.gov/Viewer.action) for reference)?
@@ -1405,7 +1405,7 @@ isgood_quality = in_golden_json(golden_lumi_blocks, events.run,
     events.luminosityBlock, ak.ArrayBuilder()).snapshot()
 ```
 
-The other data quality recommendation is to recommend individual events if they fail one of a set of so-called $p\_{\mathrm{T}}^{\mathrm{miss}}$ filters. The NanoAOD columns corresponding to these filters are shown in the following table.
+The other data quality recommendation is to veto individual events if they fail one of a set of so-called $p\_{\mathrm{T}}^{\mathrm{miss}}$ filters. The NanoAOD columns corresponding to these filters are shown in the following table.
 
 | 2016 Filters                              |
 |-------------------------------------------|
@@ -1421,9 +1421,9 @@ The other data quality recommendation is to recommend individual events if they 
 
 We will also require in data and simulation that events pass the `HLT_IsoMu24` standard trigger for isolated muons.
 
-Within a given event, we also generally apply quality criteria on specific physics objects. Because the needs of each analysis are different, the general reconstruction generally has very loose criteria for what is considered an electron, muon, jet, etc. We will want to apply some quality criteria on top of these criteria. Some suggested requirements are given in the tables below. 
+Within a given event, we also generally apply quality criteria on specific physics objects. Because the needs of each analysis are different, the general reconstruction generally has very loose criteria for what is considered an electron, muon, jet, etc. We will want to apply some quality criteria on top of the basic reconstruction. Some suggested requirements are given in the tables below. 
 
-There are central algorithms developed, either by hand or using machine learning techniques, to reject "fake" objects. Note that "fake" objects refers to any reconstructed objects that don't correspond to the particles of interest from the original collision including particles from other collisions ("pileup") or particles produced downstream by decays of particles in the initial collision. We will use the "WP 90 Fall17v2 ID" for electrons, the "loose ID" for muons, and a combination of the "jet ID" and "jet pileup ID" for jets. For electrons and muons, we will make selections on relative isolation since most "fake" electrons and muons are actually heavy flavor hadrons inside jets that have decayed into electrons or muons, which means that they will generally not be very isolated. Relative isolation is simply the sum of $p\_{\mathrm{T}}$ of particles within some angular cone of the target particle divided by the $p\_{\mathrm{T}}$ of the target particle. Since fake objects generally increase exponentially at low $p\_{\mathrm{T}}$ we also add a selection on $p\_{\mathrm{T}}$. We make a selection on $\eta$ simply to ensure that the reconstructed particles are fully contained in areas of the experiment with full detector coverage. Finally, we make selections on the electron and muon impact parameters $d\_{xy}$ and $d\_{z}$, the displacement between the electron and muon track in the x/y plane or z axis from the reconstructed collision point (primary vertex) since this is expected to be 0 within uncertainty for electrons and muons coming from the collision of interest. 
+There are central algorithms developed, either by hand or using machine learning techniques, to reject "fake" objects. Note that "fake" objects refers to any reconstructed objects that don't correspond to the particles of interest from the original collision including detector noise, particles from other collisions ("pileup"), and particles produced downstream by decays of particles in the initial collision. We will use the "WP 90 Fall17v2 ID" for electrons, the "loose ID" for muons, and a combination of the "jet ID" and "jet pileup ID" for jets. For electrons and muons, we will make selections on relative isolation since most "fake" electrons and muons are actually heavy flavor hadrons inside jets that have decayed into electrons or muons, which means that they will generally not be very isolated. Relative isolation is simply the sum of $p\_{\mathrm{T}}$ of particles within some angular cone of the target particle divided by the $p\_{\mathrm{T}}$ of the target particle. Since fake objects generally increase exponentially at low $p\_{\mathrm{T}}$ we also add a selection on $p\_{\mathrm{T}}$. We make a selection on $\eta$ simply to ensure that the reconstructed particles are fully contained in areas of the experiment with full detector coverage. Finally, we make selections on the electron and muon impact parameters $d\_{xy}$ and $d\_{z}$, the displacement between the electron and muon track in the x/y plane or z axis from the reconstructed collision point (primary vertex) since this is expected to be 0 within uncertainty for electrons and muons coming from the collision of interest. 
 
 | Suggested electron criteria              |
 |------------------------------------------|
@@ -1454,7 +1454,7 @@ There are central algorithms developed, either by hand or using machine learning
 
 Note that since jet reconstruction is performed by clustering all particles, high momentum electrons and muons will also be included as "jets", so we also suggest requiring that the angular separation $\Delta R=\sqrt{(\Delta \eta)^2+(\Delta \phi)^2}$ between selected jets and the nearest selected lepton is at least 0.4. Note that since $\phi$ is an angle (defined between $-\pi$ and $\pi$), calculating $\Delta\phi$ is not as simple as taking the difference between $\phi$ values.
 
-The LHC experiment data sets are very large, with the full data set more than 100 TB in the smallest centrally produced format. Each analysis typically only uses a small fraction of the data, and so it is important to reduce the data size quickly to be able to do analysis on a reasonable time scale. Reduction of data is sometimes called skimming, slimming, and thinning. Skimming refers to removing rows/events that one will not use for a given analysis, slimming refers to removing columns that one will not use for a given analysis, and thinning refers to removing entries (typically particle candidates) within a given column/event. The below table gives a suggestion of what information to save (slimming/thinning). It consists of variables for the main physics objects and the generator weight for simulation, which will be discussed more in the next section. You can restrict to saving just events that pass the basic data quality criteria and triggers with at least 1 selected electron and 1 selected muon (skimming).
+The LHC experiment data sets are very large, with the full data set more than 100 TB in the NanoAOD format (which is already orders of magnitude smaller than the raw data). Each analysis typically only uses a small fraction of the data, and so it is important to reduce the data size quickly to be able to do analysis on a reasonable time scale. Reduction of data is sometimes called skimming, slimming, and thinning. Skimming refers to removing rows/events that one will not use for a given analysis, slimming refers to removing columns that one will not use for a given analysis, and thinning refers to removing entries (typically particle candidates) within a given column/event. The below table gives a suggestion of what information to save (slimming/thinning). It consists of variables for the main physics objects and the generator weight for simulation, which will be discussed more in the next section. You can restrict to saving just events that pass the basic data quality criteria and triggers with at least 1 selected electron and 1 selected muon (skimming).
 
 | Suggested NanoAOD columns to save              |
 |------------------------------------------------|
@@ -1482,7 +1482,7 @@ The LHC experiment data sets are very large, with the full data set more than 10
 
 To conclude this section of the exercise, write (and run) a coffea module that does basic data quality checks and saves the reduced data set to your machine. 
 
-A basic outline is given below, but contains only selections for muons and saves only muon information. You can extend it to include electron, jet, and $p\_{\mathrm{T}}&{\mathrm{miss}}$ information. You should also include in the dataset metadata a simulation flag, which is used to determine if the golden json should be used and whether there is a `genWeight` column present in the data set.
+A basic outline is given below, but contains only selections for muons and saves only muon information. You can extend it to include electron, jet, and $p\_{\mathrm{T}}^{\mathrm{miss}}$ information. You should also include in the dataset metadata a simulation flag, which is used to determine if the golden json should be used and whether there is a `genWeight` column present in the data set.
 
 ```py
 def process_skim(events: ak.Array) -> dict:
@@ -1551,38 +1551,119 @@ y2016_Collisions16_JSON.txt')
 
 ### Exploring the data
 
-### Assessing uncertainties and performing the measurement
+There is one more hurdle before we can start making plots, which is simulation weighting. The first stubtlety here is that the way quantum field theory simulation is performed can require generation of events with positive and negative weights. These weights are stored in the `genWeight` branch of NanoAOD, which we saved in the previous data reduction step. The second issue is that the number of (weighted or unweighted) simulation events will in general not match data. We can simulate as few or as many events as we want, assuming we have enough CPU time. In general, we generally have much more data than simulation for common processes like QCD multijet scattering, and more simulation than data for rare processes like Higgs boson production and multiboson production. We thus must renormalize the simulation weights to match what we expect in data.
 
-<!--In this section we will assume you have imported the following libraries
+The number of events expected in data is given by the product of the integrated luminosity (amount of data collected where 1 fb$^{-1}$ is equivalent to about 10 trillion pp collisions at 13 TeV) and the cross section. The cross sections for our simulated samples are given in the following table. 
+
+| Simulated sample                          | Cross section |
+|-------------------------------------------|---------------|
+| `TTTo2L2Nu`                               | 87.34 pb      |
+| `DYJetsToLL_M-50`                         | 6.077 nb      |
+| `ST_tW_top_5f_inclusiveDecays`            | 38.09 pb      |
+| `ST_tW_antitop_5f_inclusiveDecays`        | 38.06 pb      |
+| `ST_t-channel_top_5f_InclusiveDecays`     | 119.7 pb      |
+| `ST_t-channel_antitop_5f_InclusiveDecays` | 71.74 pb      |
+
+To match simulation to this, we need the total sum of the generator weights of all generated events. In NanoAOD, this is stored in the simulation file metadata, which is a tree with the name "Runs" in the each root file (recall the event content is the tree called "Events"). You can thus get the sum of weights very quickly with a small snippet:
 
 ```py
-import awkward as ak
-improt matplotlib.pyplot as plt
-import mplhep as mh
-import numpy as np
-import uproot as ur
+# define a list dataset_names with all datasets you want to sum weights for
+
+gen_event_sumw = 0.0
+for dataset_name in dataset_names:
+  with ur.open(dataset_name) as dataset:
+    #tree consists of just one entry with metadata
+    genEventSumw_arr = (dataset['Runs'])['genEventSumw'].array()
+    gen_event_sumw += genEventSumw_arr[0]
+
+print(f'Sum of weights for dataset is {gen_event_sumw}')
 ```
 
-A typical data analysis workflow involves reading the data, calculating new quantities, filtering the data, and producing a human-understandable output such as a (table) numbers or histograms. The code below shows a simple example:
+With the sum of weights `genEventSumw` in hand, the weight for a given simulated event is `genWeight/genEventSumw*cross_section*luminosity`. For the era 2016H, the integrated luminosity is 8.74 fb$^{-1}$ (8740 pb$^{-1}$) (if you later also use the 2016G data, the integrated luminosity for that data set is 7.65 fb$^{-1}$). 
+
+We are now ready to start exploring the data and producing some plots. As discussed [previously](#histograms-and-data-visualization-with-hist-matplolib-and-mplhep) histograms are the standard way to visualize data in particle physics. You can find an example [here](https://cms-results.web.cern.ch/cms-results/public-results/publications/TOP-24-009/CMS-TOP-24-009_Figure_0A1-b.pdf) (and many more by looking through [ATLAS](https://twiki.cern.ch/twiki/bin/view/AtlasPublic) and [CMS](https://cms-results-search.web.cern.ch/) papers); these plots can look a bit overwhelming at first glance, but we can break them down as follows. First, the top frame show a set of histograms (events in bins of some variable, the variable in this example is not too important): the data are shown as black points and the simulation as solid colors, which are stacked on top of each other. This allows one to see both the overall expected yields in simulation as well as the breakdown across different processes. The bottom frame shows the ratio of events in data to events in simulation, which is expected to be 1 if simulation perfectly matches data. As usual, there are axis labels and legends, which are of the utmost importance.
+
+The snippet below shows a template of a coffea processor ow one might use to process the samples to produce histograms.
 
 ```py
-# get input
-dataset_file = ur.open('intro_tree.root')
-events = dataset_file['Events'].arrays()
+lumi = 8.74
 
-# calculate the number of electrons passing ID criteria
-events['n_good_el'] = ak.sum(events['Electron_mvaFall17V2Iso_WP90'], axis=-1)
+def histogram_processor(events: ak.Array) -> dict:
 
-# make histogram of number of good electrons
-fig, axis = plt.subplots()
-hist = np.histogram(events.n_good_el,4,(-0.5,3.5))
-mh.histplot(*hist,
-    label='Mystery dataset',
-    ax=axis)
-axis.set_xlabel('# Electrons (WP90)')
-axis.set_ylabel('# Events')
-plt.savefig('plots/mystery_nel.pdf')
-```-->
+  dataset_name = events.metadata['dataset']
+  is_simulation = events.metadata['simulation']
+  if is_simulation:
+    gen_event_sumw = events.metadata['gen_event_sumw']
+    cross_section = events.metadata['cross_section']
+
+  # plot pT of highest pT electron in each event
+
+  lead_electron_pt_hist = hist.Hist.new.Reg(40,20,100,name='pt').Weight()
+  if is_simulation:
+    lead_electron_pt_hist.fill(ak.max(events.Electron_pt, axis=-1),
+        weight=events.genWeight/gen_event_sumw*cross_section*lumi)
+  else:
+    lead_electron_pt_hist.fill(ak.max(events.Electron_pt, axis=-1))
+
+  return { dataset_name: { 'lead_electron_pt_hist' : lead_electron_pt_hist} }
+```
+
+Remember that science needs to be reproducible, so you should make a new processor in your notebook/python file each time rather than overwriting/replacing an old one. To run this processor, you'll need to define datasets with the appropriate metadata.
+
+```py
+datasets = {
+      'data': {'treename' : 'Events',
+               'files': #list your data files here
+               'metadata' : {'simulation' : False}},
+      'TTto2L' : {'treename' : 'Events',
+                  'files' : #list your TTto2L files here
+                  'metadata' : {'simulation' : True,
+                                'cross_section' : 87.34,
+                                'gen_event_sumw' : 36564627.76120001}},
+      'DYto2L' : {'treename' : 'Events',
+                   'files' : #list your Z files here
+                   'metadata' : {'simulation' : True,
+                                 'cross_section' : 6077.0,
+                                 'gen_event_sumw' : 1434319.0}},
+      'tW_top' : {'treename' : 'Events',
+                  'files' : #list your tW files here
+                  'metadata' : {'simulation' : True,
+                                'cross_section' : 38.09,
+                                'gen_event_sumw' : 3568867.528000001}},
+# ...and so on
+# making sure to modify the sum of weights to match your values
+           }
+```
+
+You can then run the processor and make a plot with `mplhep`.
+
+```py
+runner = coffea.processor.Runner(
+    executor=coffea.processor.IterativeExecutor(),
+    schema=coffea.nanoevents.BaseSchema)
+
+result = runner(datasets, processor_instance=histogram_processor)
+
+hist_data = result['data']['lead_electron_pt_hist']
+hist_tt = result['TTto2L']['lead_electron_pt_hist']
+hist_z = result['DYto2L']['lead_electron_pt_hist']
+hist_st = (result['tW_top']['lead_electron_pt_hist']
+           +result['tW_antitop']['lead_electron_pt_hist']
+           +result['ST_top']['lead_electron_pt_hist']
+           +result['ST_antitop']['lead_electron_pt_hist'])
+
+fig, ax_main, ax_comp = mh.comp.data_model(
+    data_hist=hist_data,
+    stacked_components=[hist_tt, hist_z, hist_st],
+    stacked_labels=['TT','Z','Single t/tW'],
+    xlabel=r'Lead electron $p_{\mathrm{T}}$ [GeV]',
+    ylabel='Events/2 GeV')
+plt.savefig('plots/lead_electron_pt.pdf')
+```
+
+You can try making plots comparing simulation and data for different selections and variables. The characteristics of our signal include the presence of a true electron and muon together with two b jets and some missing transverse momentum from the neutrinos. You can check how the distributions in data and simulation compare across variables as you change the selections. Since our skim has relatively loose selections on electrons and muons, you may find for example that you have a fair bit more data that simulation due to the presence of fake electrons and muon- you can reduce this with tighter selections on variables such as the isolation, transverse momentum, or displacement. The `Jet_btagDeepFlavB` (deepJet) branch is the output of an RNN trained to separate b jets. Jets with a deepJet score of more than 0.2489 are considered to be "medium b-tagged jets" but you can experiment with other selections as well.
+
+### Assessing uncertainties and performing the measurement
 
 ## Machine learning with xgboost and pytorch
 
