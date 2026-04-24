@@ -1507,6 +1507,9 @@ y2016_Collisions16_JSON.txt')
              & events.Flag_eeBadScFilter
              & events.Flag_hfNoisyHitsFilter)
 
+  if not is_simulation:
+    filters = filters & isgood_quality
+
   events['Muon_isgood'] = ((events.Muon_looseId)
                            & (events.Muon_pfRelIso03_all < 0.35)
                            & (events.Muon_pt > 20)
